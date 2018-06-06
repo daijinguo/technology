@@ -1,0 +1,4 @@
+1. Event 的事件机制
+1> Event 事件的拦截
+onInterceptTouchEvent
+负责拦截用户产生的点击或者触摸事件

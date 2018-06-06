@@ -1,0 +1,1452 @@
+一. 注解的概念
+    注解（Annotation），也叫元数据（Metadata），是Java5的新特性，JDK5引入了Metadata很容易的就能够调用Annotations。
+注解与类、接口、枚举在同一个层次，并可以应用于包、类型、构造方法、方法、成员变量、参数、本地变量的声明中，用来对这些元素进行说明注释。
+
+二. 注解的语法与定义形式
+（1）以@interface关键字定义
+（2）注解包含成员，成员以无参数的方法的形式被声明。其方法名和返回值定义了该成员的名字和类型。
+（3）成员赋值是通过@Annotation(name=value)的形式。
+（4）注解需要标明注解的生命周期，注解的修饰目标等信息，这些信息是通过元注解实现。
+以 java.lang.annotation 中定义的 Target 注解来说明：
+@Retention(value = RetentionPolicy.RUNTIME)  
+@Target(value = { ElementType.ANNOTATION_TYPE } )  
+public @interface Target {
+    ElementType[] value();
+}
+源码分析如下：
+第一：元注解@Retention，成员value的值为RetentionPolicy.RUNTIME。
+第二：元注解@Target，成员value是个数组，用{}形式赋值，值为ElementType.ANNOTATION_TYPE
+第三：成员名称为value，类型为ElementType[]
+另外，需要注意一下，如果成员名称是value，在赋值过程中可以简写。如果成员类型为数组，但是只赋值一个元素，则也可以简写。
+如上面的简写形式为：
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface Target {
+    ElementType[] value();
+}
+
+三.注解的分类
+    注解的分类有两种分法：
+第一种分法
+1. 基本内置注解，是指Java自带的几个Annotation，如@Override、Deprecated、@SuppressWarnings等；
+2. 元注解（meta-annotation），是指负责注解其他注解的注解，JDK 1.5及以后版本定义了4个标准的元注解类型，如下：
+    @Target
+    @Retention
+    @Documented
+    @Inherited
+3. 自定义注解，根据需要可以自定义注解，自定义注解需要用到上面的meta-annotation
+
+第二种分法
+    注解需要标明注解的生命周期，这些信息是通过元注解 @Retention 实现，
+注解的值是 enum 类型的 RetentionPolicy，包括以下几种情况：
+public enum RetentionPolicy {
+    /** 
+     * 注解只保留在源文件，当Java文件编译成class文件的时候，注解被遗弃. 
+     * 这意味着：Annotation仅存在于编译器处理期间，编译器处理完之后，该Annotation就没用了 
+     */  
+    SOURCE,
+
+    /** 
+     * 注解被保留到class文件，但jvm加载class文件时候被遗弃，这是默认的生命周期. 
+     */
+    CLASS,
+  
+    /** 
+     * 注解不仅被保存到class文件中，jvm加载class文件之后，仍然存在， 
+     * 保存到class对象中，可以通过反射来获取 
+     */
+    RUNTIME
+}
+
+
+四. 元注解
+    如上所介绍的Java定义了4个标准的元注解：
+@Documented：标记注解，用于描述其它类型的注解应该被作为被标注的程序成员的公共API，因此可以被例如javadoc此类的工具文档化
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface Documented {
+}
+
+@Inherited：标记注解，允许子类继承父类的注解
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface Inherited {
+}
+
+@Retention：指Annotation被保留的时间长短，标明注解的生命周期，3种RetentionPolicy取值含义上面以说明
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface Retention {
+    RetentionPolicy value();
+}
+
+@Target：标明注解的修饰目标，共有
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface Target {
+    ElementType[] value();
+}
+// ElementType取值
+public enum ElementType {
+    /** 类、接口（包括注解类型）或枚举 */
+    TYPE,  
+    /** field属性，也包括enum常量使用的注解 */
+    FIELD,
+    /** 方法 */
+    METHOD,
+    /** 参数 */
+    PARAMETER,
+    /** 构造函数 */
+    CONSTRUCTOR,
+    /** 局部变量 */
+    LOCAL_VARIABLE,
+    /** 注解上使用的元注解 */
+    ANNOTATION_TYPE,
+    /** 包 */
+    PACKAGE
+}
+
+article address:
+1. http://blog.csdn.net/github_35180164/article/details/52107204
+2. http://swiftlet.net/archives/1906
+
+
+
+五. 自定义注解-运行时注解( RetentionPolicy.RUNTIME )
+    前面有提到注解按生命周期来划分可分为3类:
+    RetentionPolicy.SOURCE ：注解只保留在源文件，当Java文件编译成class文件的时候，注解被遗弃；
+    RetentionPolicy.CLASS  ：注解被保留到class文件，但jvm加载class文件时候被遗弃，这是默认的生命周期；
+    RetentionPolicy.RUNTIME：注解不仅被保存到class文件中，jvm加载class文件之后，仍然存在；
+这3个生命周期分别对应于：Java源文件(.java文件) ---> .class文件 ---> 内存中的字节码。
+那怎么来选择合适的注解生命周期呢？
+
+    首先要明确生命周期长度 SOURCE < CLASS < RUNTIME ，所以前者能作用的地方后者一定也能作用。一般
+如果需要在运行时去动态获取注解信息，那只能用 RUNTIME 注解；
+如果要在编译时进行一些预处理操作，比如生成一些辅助代码（如 ButterKnife），就用 CLASS注解；
+如果只是做一些检查性的操作，比如 @Override 和 @SuppressWarnings，则可选用 SOURCE 注解。
+
+下面来介绍下运行时注解的简单运用:
+1. 获取注解
+    你需要通过反射来获取运行时注解，可以从 Package、Class、Field、Method...上面获取，基本方法都一样，几个常见的方法如下：
+/** 
+ * 获取指定类型的注解 
+ */  
+public <A extends Annotation> A getAnnotation(Class<A> annotationType);  
+  
+/** 
+ * 获取所有注解，如果有的话 
+ */  
+public Annotation[] getAnnotations();  
+  
+/** 
+ * 获取所有注解，忽略继承的注解 
+ */  
+public Annotation[] getDeclaredAnnotations();  
+  
+/** 
+ * 指定注解是否存在该元素上，如果有则返回true，否则false 
+ */  
+public boolean isAnnotationPresent(Class<? extends Annotation> annotationType);
+  
+/** 
+ * 获取Method中参数的所有注解 
+ */  
+public Annotation[][] getParameterAnnotations();
+
+要使用这些函数必须先通过反射获取到对应的元素：Class、Field、Method 等。
+
+
+2. 自定义注解
+来看下自定义注解的简单使用方式，这里先定义3个运行时注解：
+// 适用类、接口（包括注解类型）或枚举  
+@Retention(RetentionPolicy.RUNTIME)  
+@Target(ElementType.TYPE)  
+public @interface ClassInfo {  
+    String value();  
+}
+
+// 适用field属性，也包括enum常量  
+@Retention(RetentionPolicy.RUNTIME)  
+@Target(ElementType.FIELD)  
+public @interface FieldInfo {  
+    int[] value();  
+}
+
+// 适用方法  
+@Retention(RetentionPolicy.RUNTIME)  
+@Target(ElementType.METHOD)  
+public @interface MethodInfo {  
+    String name() default "long";  
+    String data();  
+    int age() default 27;  
+}
+这3个注解分别适用于不同的元素，并都带有不同的属性，在使用注解是需要设置这些属性值。
+再定义一个测试类来使用这些注解：
+/** 
+ * 测试运行时注解 
+ */  
+@ClassInfo("Test Class")  
+public class TestRuntimeAnnotation {  
+  
+    @FieldInfo(value = {1, 2})  
+    public String fieldInfo = "FiledInfo";  
+  
+    @FieldInfo(value = {10086})  
+    public int i = 100;  
+  
+    @MethodInfo(name = "BlueBird", data = "Big")  
+    public static String getMethodInfo() {  
+        return TestRuntimeAnnotation.class.getSimpleName();  
+    }  
+}
+
+/** 
+ * 测试运行时注解 
+ */  
+private void _testRuntimeAnnotation() {  
+    StringBuffer sb = new StringBuffer();  
+    Class<?> cls = TestRuntimeAnnotation.class;  
+    Constructor<?>[] constructors = cls.getConstructors();  
+    // 获取指定类型的注解  
+    sb.append("Class注解：").append("\n");  
+    ClassInfo classInfo = cls.getAnnotation(ClassInfo.class);  
+    if (classInfo != null) {  
+        sb.append(Modifier.toString(cls.getModifiers())).append(" ")  
+                .append(cls.getSimpleName()).append("\n");  
+        sb.append("注解值: ").append(classInfo.value()).append("\n\n");  
+    }  
+  
+    sb.append("Field注解：").append("\n");  
+    Field[] fields = cls.getDeclaredFields();  
+    for (Field field : fields) {  
+        FieldInfo fieldInfo = field.getAnnotation(FieldInfo.class);  
+        if (fieldInfo != null) {  
+            sb.append(Modifier.toString(field.getModifiers())).append(" ")  
+                    .append(field.getType().getSimpleName()).append(" ")  
+                    .append(field.getName()).append("\n");  
+            sb.append("注解值: ").append(Arrays.toString(fieldInfo.value())).append("\n\n");  
+        }  
+    }  
+  
+    sb.append("Method注解：").append("\n");  
+    Method[] methods = cls.getDeclaredMethods();  
+    for (Method method : methods) {  
+        MethodInfo methodInfo = method.getAnnotation(MethodInfo.class);  
+        if (methodInfo != null) {  
+            sb.append(Modifier.toString(method.getModifiers())).append(" ")  
+                    .append(method.getReturnType().getSimpleName()).append(" ")  
+                    .append(method.getName()).append("\n");  
+            sb.append("注解值: ").append("\n");  
+            sb.append("name: ").append(methodInfo.name()).append("\n");  
+            sb.append("data: ").append(methodInfo.data()).append("\n");  
+            sb.append("age: ").append(methodInfo.age()).append("\n");  
+        }  
+    }  
+    System.out.print(sb.toString());
+}
+
+这个自定义运行时注解是很简单的例子，有很多优秀的开源项目都有使用运行时注解来处理问题，有兴趣可以找一些来研究。
+因为涉及到反射，所以运行时注解的效率多少会受到影响，现在很多的开源项目使用的是编译时注解，关于编译时注解后面再来详细介绍。
+
+
+article address:
+1. http://blog.csdn.net/github_35180164/article/details/52118286
+
+
+
+六. 自定义注解-源码注解 ( RetentionPolicy.SOURCE )
+    源码注解( RetentionPolicy.SOURCE ) 的生命周期只存在Java源文件这一阶段，是3种生命周期中最短的注解。
+当在Java源程序上加了一个注解，这个Java源程序要由javac去编译，javac把java源文件编译成.class文件，在编译成class时会把Java源程序上的源码注解给去掉。
+需要注意的是，在编译器处理期间源码注解还存在，即注解处理器Processor 也能处理源码注解，编译器处理完之后就没有该注解信息了。
+
+（关于注解处理器Processor的详细用法放在编译时注解RetentionPolicy.CLASS里说明，或则可以先看这个：Java注解处理器使用详解）
+atricle address: http://blog.csdn.net/github_35180164/article/details/52055994
+
+1. 自定义注解
+    在开始写注解前，先来考虑我们平时会遇到的一种情况：
+    我们定义的类有一个 int 型的状态参数要设置，但我们设置的状态又只能限定在[OPEN=1, CLOSE=2]这两种状态，
+如果我们要提供一个接口来设置的话，那么一种做法是定义一个Enum枚举来作为参数，这样就能限定参数的取值范围了，
+但是使用枚举会比常量占用更多的内存。这里可以用注解来处理这种问题，也就是下面要讲的自定义源码注解，这里需要用到一个元注解@IntDef，
+来看下代码：
+/** 
+ * 测试源码注解 
+ */  
+public class TestSourceAnnotation {  
+  
+    // 状态值  
+    public static final int STATUS_OPEN = 1;
+    public static final int STATUS_CLOSE = 2;
+
+    private static int sStatus = STATUS_OPEN;
+
+    private TestSourceAnnotation() {}  
+
+    // 定义适用于参数的注解，限定取值范围为{STATUS_OPEN, STATUS_CLOSE}
+    @Retention(RetentionPolicy.SOURCE)  
+    @Target(ElementType.PARAMETER)  
+    @IntDef({STATUS_OPEN, STATUS_CLOSE})
+    public @interface Status {
+    }
+  
+    /** 
+     * 定义方法并使用@Status限定参数的取值 
+     * @param status 
+     */  
+    public static void setStatus(@Status int status) {  
+        sStatus = status;  
+    }  
+  
+    public static int getStatus() {  
+        return sStatus;  
+    }  
+  
+  
+    public static String getStatusDesc() {  
+        if (sStatus == STATUS_OPEN) {  
+            return "打开状态";  
+        } else {  
+            return "关闭状态";  
+        }  
+    }  
+}
+这里定义了一个@Status注解，并用注解@IntDef限定了取值范围，最后将@Status注解用在参数上就行了，
+这样在使用调用方法的使用只能使用指定的参数{STATUS_OPEN, STATUS_CLOSE}，就算用数值1编译器也会提示报错。
+除了@IntDef注解外还用一个@StringDef注解可以使用，用来处理字符串。
+看下使用代码：
+/** 
+ * 测试源码注解 
+ */  
+private void _testSourceAnnotation() {  
+    if (mIsOpen) {  
+    //  TestSourceAnnotation.setStatus(1); 直接设置数值编译器会直接提示错误
+        TestSourceAnnotation.setStatus(TestSourceAnnotation.STATUS_CLOSE);
+        mIsOpen = false;
+    } else {
+        TestSourceAnnotation.setStatus(TestSourceAnnotation.STATUS_OPEN);
+        mIsOpen = true;
+    }
+
+    mTvDesc.setText(TestSourceAnnotation.getStatusDesc());
+}
+总的来说还是挺好用的
+
+atricle address:
+1. http://blog.csdn.net/github_35180164/article/details/52119731
+
+
+
+七. 自定义注解-编译时注解 ( RetentionPolicy.CLASS )  PART-I
+    说到编译时注解(RetentionPolicy.CLASS)都要和注解处理器(Annotation Processor) 扯上关系，因为这里是真正体现编译时注解价值的地方。
+需要注意的一点是，运行时注解(RetentionPolicy.RUNTIME)和源码注解(RetentionPolicy.SOURCE)也可以在注解处理器进行处理，
+不同的注解有各自的生命周期，根据你实际使用来确定。
+
+1. 注解处理器(Annotation Processor)
+    首先来了解下什么是注解处理器，注解处理器是javac的一个工具，它用来在编译时扫描和处理注解（Annotation）。
+你可以自定义注解，并注册到相应的注解处理器，由注解处理器来处理你的注解。一个注解的注解处理器，以Java代码（或者编译过的字节码）作为输入，
+生成文件（通常是.java文件）作为输出。这些生成的Java代码是在生成的.java文件中，所以你不能修改已经存在的Java类，
+例如向已有的类中添加方法。这些生成的Java文件，会同其他普通的手动编写的Java源代码一样被javac编译。
+
+2. 自定义注解(RetentionPolicy.CLASS)
+    先来定义要使用的注解，这里建一个Java库来专门放注解，库名为：annotations，和下面要创建的注解处理器分开，
+至于为什么要分开创建后面再说。注解库指定JDK版本为1.7，如何指定往下看。自定义注解如下：
+/** 
+ * 编译时注解 
+ */  
+@Retention(RetentionPolicy.CLASS)  
+@Target(ElementType.TYPE)  
+public @interface MyAnnotation {  
+    String value();  
+}
+定义的是编译时注解，对象为类或接口等。
+
+3. 定义注解处理器
+    下面来定义注解处理器，另外建一个Java库工程，库名为：processors，记得是和存放注解的库分开的。
+注意，这里必须为Java库，不然会找不到javax包下的相关资源。来看下现在的目录结构：
+[file:./ann-pic-01.png] 见当前文件所在文件夹下的 ann-pic-01.png 文件
+    这里定义一个注解处理器 MyProcessor，每一个处理器都是继承于AbstractProcessor，并要求必须复写 process() 方法，
+通常我们使用会去复写以下4个方法：
+/** 
+ * 每一个注解处理器类都必须有一个空的构造函数，默认不写就行; 
+ */  
+public class MyProcessor extends AbstractProcessor {  
+  
+    /** 
+     * init()方法会被注解处理工具调用，并输入ProcessingEnviroment参数。 
+     * ProcessingEnviroment提供很多有用的工具类Elements, Types 和 Filer 
+     * @param processingEnv 提供给 processor 用来访问工具框架的环境 
+     */  
+    @Override  
+    public synchronized void init(ProcessingEnvironment processingEnv) {  
+        super.init(processingEnv);  
+    }  
+  
+    /** 
+     * 这相当于每个处理器的主函数main()，你在这里写你的扫描、评估和处理注解的代码，以及生成Java文件。 
+     * 输入参数RoundEnviroment，可以让你查询出包含特定注解的被注解元素 
+     * @param annotations   请求处理的注解类型 
+     * @param roundEnv  有关当前和以前的信息环境 
+     * @return  如果返回 true，则这些注解已声明并且不要求后续 Processor 处理它们； 
+     *          如果返回 false，则这些注解未声明并且可能要求后续 Processor 处理它们 
+     */  
+    @Override  
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {  
+        return false;  
+    }  
+  
+    /** 
+     * 这里必须指定，这个注解处理器是注册给哪个注解的。注意，它的返回值是一个字符串的集合，包含本处理器想要处理的注解类型的合法全称 
+     * @return  注解器所支持的注解类型集合，如果没有这样的类型，则返回一个空集合 
+     */  
+    @Override  
+    public Set<String> getSupportedAnnotationTypes() {  
+        Set<String> annotataions = new LinkedHashSet<String>();  
+        annotataions.add(MyAnnotation.class.getCanonicalName());  
+        return annotataions;  
+    }  
+  
+    /** 
+     * 指定使用的Java版本，通常这里返回SourceVersion.latestSupported()，默认返回SourceVersion.RELEASE_6 
+     * @return  使用的Java版本 
+     */  
+    @Override  
+    public SourceVersion getSupportedSourceVersion() {  
+        return SourceVersion.latestSupported();  
+    }  
+}
+
+上面注释说的挺清楚了，我们需要处理的工作在 process() 方法中进行，等下给出例子。
+对于 getSupportedAnnotationTypes() 方法标明了这个注解处理器要处理哪些注解，返回的是一个Set 值，说明一个注解处理器可以处理多个注解。
+除了在这个方法中指定要处理的注解外，还可以通过注解的方式来指定（SourceVersion也一样）：
+@SupportedSourceVersion(SourceVersion.RELEASE_8)  
+@SupportedAnnotationTypes("com.example.annotation.cls.MyAnnotation")  
+public class MyProcessor extends AbstractProcessor {  
+    // ...  
+}
+因为兼容的原因，特别是针对Android平台，建议使用重载 getSupportedAnnotationTypes() 和 getSupportedSourceVersion()方法
+代替@SupportedAnnotationTypes 和@SupportedSourceVersion。
+现在来添加对注解的处理，简单的输出一些信息即可，代码如下：
+@Override  
+public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    // roundEnv.getElementsAnnotatedWith()返回使用给定注解类型的元素  
+    for (Element element : roundEnv.getElementsAnnotatedWith(MyAnnotation.class)) {
+        System.out.println("------------------------------");
+        // 判断元素的类型为Class  
+        if (element.getKind() == ElementKind.CLASS) {
+            // 显示转换元素类型  
+            TypeElement typeElement = (TypeElement) element;
+            // 输出元素名称  
+            System.out.println(typeElement.getSimpleName());
+            // 输出注解属性值  
+            System.out.println(typeElement.getAnnotation(MyAnnotation.class).value());
+        }
+        System.out.println("------------------------------");
+    }
+    return false;
+}
+到这里注解处理器也写好了，下面就看怎么运行它了。
+
+4. 运行注解处理器
+    在运行前，你需要在主项目工程中引入 annotations 和 processors 这两个库（引入 processors 库不是个好做法，后面介绍更适当的方法）。
+这时如果你直接编译或者运行工程的话，是看不到任何输出信息的，这里还要做的一步操作是指定注解处理器的所在，需要做如下操作：
+1> 在 processors 库的 main 目录下新建 resources 资源文件夹；
+2> 在 resources文件夹下建立 META-INF/services 目录文件夹；
+3> 在 META-INF/services 目录文件夹下创建 javax.annotation.processing.Processor 文件；
+4> 在 javax.annotation.processing.Processor 文件写入注解处理器的全称，包括包路径；
+来看下整个目录结构：
+[file://ann-pic-02.jpeg] 请见当前文件所在文件夹下的 ann-pic-02.jpeg 文件
+
+处理完就可以使用了，我们在项目中使用 @MyAnnotation 注解：
+@MyAnnotation("Hello Annotation")  
+public class MainActivity extends AppCompatActivity {  
+    // ...  
+}
+这个需要在 ann-pic-01.png 图片中 android app 工程中的 build.gradle 文件中添加如下的内容：
+android {
+    ......
+    defaultConfig {
+        ......
+        javaCompileOptions {
+            annotationProcessorOptions {
+                includeCompileClasspath = true
+            }
+        }
+        ......
+    }
+    ......
+}
+javaCompileOptions 这个节点 要不然编译出错。
+
+按照如上的配置就能正常的工作，当然了，上面还遗留着一个问题，我们的主项目中引用了 processors 库，
+但注解处理器只在编译处理期间需要用到，编译处理完后就没有实际作用了，而主项目添加了这个库会引入很多不必要的文件，
+为了处理这个问题我们需要引入个插件android-apt，它能很好地处理这个问题。
+
+在介绍这个插件前，我想先介绍个好用的库AutoService，这里有个坑。
+
+5. AutoService
+    前面在指定注解处理器的时候你会不会觉得很麻烦？那么多步骤就为添加一个注解处理器，不过没关系，
+AutoService 可以帮你解决这个问题（和上面的方式选择一种使用即可）。
+    AutoService注解处理器是Google开发的，用来生成 META-INF/services/javax.annotation.processing.Processor 文件的，
+你只需要在你定义的注解处理器上添加 @AutoService(Processor.class) 就可以了，简直不能再方便了。
+先给 processors 库依赖上 AutoService，你可以直接在 AndroidStudio 工具上搜索添加，如下：
+在 processors 工程下的 build.gradle
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation project(':annotation')
+    implementation 'com.google.auto.service:auto-service:1.0-rc2'
+}
+添加 implementation 'com.google.auto.service:auto-service:1.0-rc2'
+添加好了之后就可以直接使用：
+@AutoService(Processor.class)  
+public class MyProcessor extends AbstractProcessor {
+    // ...
+}
+
+一句话完全搞定！这时重新Make下工程也能看到同样的输出信息了。但是如果你编译生成APK时，你会发现出现错误了，编译不通过，
+主要是发现了重复文件，这里有个解决办法是在主项目的 build.gradle 加上这么一段： 
+apply plugin: 'com.android.application'  
+  
+android {  
+    // ...  
+    packagingOptions {  
+        exclude 'META-INF/services/javax.annotation.processing.Processor'  
+    }  
+}
+这样就不会报错了，这是其中的一个解决方法，还有个更好的解决方法就是用上上面提到的android-apt了，下面正式登场
+
+6. android-apt
+    那么什么是android-apt呢？官网有这么一段描述：
+    The android-apt plugin assists in working with annotation processors in combination with Android Studio.
+It has two purposes:
+1> Allow to configure a compile time only annotation processor as a dependency,
+   not including the artifact in the final APK or library
+2> Set up the source paths so that code that is generated from the annotation processor is correctly picked up
+   by Android Studio
+大体来讲它有两个作用：
+    能在编译时期去依赖注解处理器并进行工作，但在生成 APK 时不会包含任何遗留的东西
+    能够辅助 Android Studio 在项目的对应目录中存放注解处理器在编译期间生成的文件
+这个就可以很好地解决上面我们遇到的问题了，来看下怎么用。
+首先在整个工程的 build.gradle 中添加如下两段语句：
+buildscript {  
+    repositories {  
+        jcenter()  
+        mavenCentral()  // add [1]
+    }  
+    dependencies {  
+        classpath 'com.android.tools.build:gradle:2.1.2'  
+        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'  // add [2]
+    }  
+}
+
+在主项目(app)的 build.gradle 中也添加两段语句：
+apply plugin: 'com.android.application'  
+apply plugin: 'com.neenbedankt.android-apt' // add
+// ...
+dependencies {  
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile 'junit:junit:4.12'  
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile project(':annotations')
+    // compile project(':processors')  替换为下面
+    apt project(':processors')  [3]
+}
+
+通过在 android studo 3.0 的实战测试发现上面的已经不其效果了，可以通过如下的方式修改：
+上面标注的[1] [2] [3] 内容中 [1] [2] 不添加任何内容
+将 [3] 处修改为：
+annotationProcessor project(':processors')
+
+article address:
+1. http://blog.csdn.net/github_35180164/article/details/52121038
+
+
+八. 自定义注解-编译时注解 ( RetentionPolicy.CLASS )  PART-II
+    在使用编译时注解时，需要在编译期间对注解进行处理，在这里我们没办法影响程序的运行逻辑，但我们可以进行一些需处理，
+比如生成一些功能性代码来辅助程序的开发，最常见的是生成.java 源文件，并在程序中可以调用到生成的文件。
+这样我们就可以用注解来帮助我们处理一些固定逻辑的重复性代码（如butterknife），提高开发的效率。
+    通过注解处理器来生成 .java 源文件基本上都会使用javapoet{https://github.com/square/javapoet} 这个库，
+JavaPoet一个是用于产生 .java 源文件的辅助库，它可以很方便地帮助我们生成需要的.java 源文件，下面来看下具体使用方法:
+在我们之前创建的 Processor 工程的 build.gradle 中添加
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation project(':annotation')
+    implementation 'com.google.auto.service:auto-service:1.0-rc2'
+
+    implementation 'com.squareup:javapoet:1.10.0' // added
+}
+implementation 'com.squareup:javapoet:1.10.0'  具体的细节版本号可以见github 中给出的内容
+
+下面以最简单的 HelloWorld 例子来看下怎么使用JavaPoet。
+先定义一个注解：
+/** 
+ * JavaPoet HelloWorld 例子 
+ */  
+@Retention(RetentionPolicy.CLASS)  
+@Target(ElementType.TYPE)  
+public @interface JPHelloWorld {  
+}
+
+在定义个注解处理器来处理这个注解：
+/** 
+ * 处理HelloWorld注解. 
+ */  
+@AutoService(Processor.class)  
+public class HelloWorldProcess extends AbstractProcessor {  
+  
+    private Filer filer;  
+  
+    @Override  
+    public synchronized void init(ProcessingEnvironment processingEnv) {  
+        super.init(processingEnv);  
+        // Filer是个接口，支持通过注解处理器创建新文件  
+        filer = processingEnv.getFiler();  
+    }  
+  
+    @Override  
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {  
+        for (TypeElement element : annotations) {  
+            if (element.getQualifiedName().toString().equals(JPHelloWorld.class.getCanonicalName())) {  
+                // 创建main方法  
+                MethodSpec main = MethodSpec.methodBuilder("main")  
+                        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)  
+                        .returns(void.class)  
+                        .addParameter(String[].class, "args")  
+                        .addStatement("$T.out.println($S)", System.class, "Hello, JavaPoet!")  
+                        .build();  
+                // 创建HelloWorld类  
+                TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")  
+                        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)  
+                        .addMethod(main)  
+                        .build();  
+  
+                try {  
+                    // 生成 com.example.HelloWorld.java  
+                    JavaFile javaFile = JavaFile.builder("com.example", helloWorld)  
+                            .addFileComment(" This codes are generated automatically. Do not modify!")  
+                            .build();  
+                    //　生成文件  
+                    javaFile.writeTo(filer);  
+                } catch (IOException e) {  
+                    e.printStackTrace();  
+                }  
+            }  
+        }  
+        return true;  
+    }  
+  
+    @Override  
+    public Set<String> getSupportedAnnotationTypes() {  
+        Set<String> annotations = new LinkedHashSet<>();  
+        annotations.add(JPHelloWorld.class.getCanonicalName());  
+        return annotations;  
+    }  
+  
+    @Override  
+    public SourceVersion getSupportedSourceVersion() {  
+        return SourceVersion.latestSupported();  
+    }  
+}
+注意在 META-INF/services/javax.annotation.processing.Processor 的文件下还是要添加一下
+dai.android.processors.MyProcessor
+dai.android.processors.HelloWorldProcess
+其中 dai.android.processors.HelloWorldProcess 就是我们刚刚添加的
+
+    在用 JavaPoet 来生成一个HelloWorld.java文件之前，我们还必须在 init（）方法里获取到 Filer，这是一个用来辅助创建文件的接口，
+我们生成文件都通过它来处理。在 process（）方法先创建了个 MethodSpec 表示一个方法，再创建一个 TypeSpec 表示一个类并添加上前面创建的方法，
+最后用 JavaFile 来生成对应的HelloWorld.java 并写入文件。
+    这是最简单的例子，整个语法结构也很清晰，相信做编程的看到这些使用方法都能猜到是做什么用的，我就没详细说了。
+除了这个例子，Github上还有很多其它示例，如果你想很好地了解编译时注解的使用的话，还是很有必要把每个例子都过一遍，
+如果不想自己敲粘贴复制下很容易的。
+
+在代码中使用定义的注解：
+@JPHelloWorld  
+public class MainActivity extends AppCompatActivity{  
+    // ...  
+}
+
+注意一下生成的文件在我们主工程[app]下的 build/generated/source/apt/debug{release}/xxx.xxx.xx.java
+
+
+article address:
+1. http://blog.csdn.net/github_35180164/article/details/52141784
+
+
+
+九. 自定义注解-编译时注解 ( RetentionPolicy.CLASS )  PART-III
+    ---- 常用接口介绍
+
+    前面介绍了关于编译时注解的使用方式，这里再补充一个关于注解处理器开发中的一些常用类、接口的使用方式和概念。
+
+1. Element和TypeMirror
+    我觉得这两个是开发注解处理器最重要的两个概念，理解这两个的概念和使用是非常有必要的。
+这两个都是接口，先来看一下Element的定义：
+/**
+ * 表示一个程序元素，比如包、类或者方法，有如下几种子接口：
+ * ExecutableElement：表示某个类或接口的方法、构造方法或初始化程序（静态或实例），包括注解类型元素 ；
+ * PackageElement：表示一个包程序元素；
+ * TypeElement：表示一个类或接口程序元素；
+ * TypeParameterElement：表示一般类、接口、方法或构造方法元素的形式类型参数；
+ * VariableElement：表示一个字段、enum 常量、方法或构造方法参数、局部变量或异常参数
+ */
+public interface Element extends AnnotatedConstruct {
+    /**
+     * 返回此元素定义的类型
+     * 例如，对于一般类元素 C<N extends Number>，返回参数化类型 C<N>
+     */
+    TypeMirror asType();
+
+    /**
+     * 返回此元素的种类：包、类、接口、方法、字段...,如下枚举值
+     * PACKAGE, ENUM, CLASS, ANNOTATION_TYPE, INTERFACE, ENUM_CONSTANT, FIELD, PARAMETER, LOCAL_VARIABLE, EXCEPTION_PARAMETER,
+     * METHOD, CONSTRUCTOR, STATIC_INIT, INSTANCE_INIT, TYPE_PARAMETER, OTHER, RESOURCE_VARIABLE;
+     */
+    ElementKind getKind();
+
+    /**
+     * 返回此元素的修饰符,如下枚举值
+     * PUBLIC, PROTECTED, PRIVATE, ABSTRACT, DEFAULT, STATIC, FINAL,
+     * TRANSIENT, VOLATILE, SYNCHRONIZED, NATIVE, STRICTFP;
+     */
+    Set<Modifier> getModifiers();
+
+    /**
+     * 返回此元素的简单名称,例如
+     * 类型元素 java.util.Set<E> 的简单名称是 "Set"；
+     * 如果此元素表示一个未指定的包，则返回一个空名称；
+     * 如果它表示一个构造方法，则返回名称 "<init>"；
+     * 如果它表示一个静态初始化程序，则返回名称 "<clinit>"；
+     * 如果它表示一个匿名类或者实例初始化程序，则返回一个空名称
+     */
+    Name getSimpleName();
+
+    /**
+     * 返回封装此元素的最里层元素。
+     * 如果此元素的声明在词法上直接封装在另一个元素的声明中，则返回那个封装元素；
+     * 如果此元素是顶层类型，则返回它的包；
+     * 如果此元素是一个包，则返回 null；
+     * 如果此元素是一个泛型参数，则返回 null.
+     */
+    Element getEnclosingElement();
+
+    /**
+     * 返回此元素直接封装的子元素
+     */
+    List<? extends Element> getEnclosedElements();
+
+    /**
+     * 返回直接存在于此元素上的注解
+     * 要获得继承的注解，可使用 getAllAnnotationMirrors
+     */
+    @Override
+    List<? extends AnnotationMirror> getAnnotationMirrors();
+
+    /**
+     * 返回此元素针对指定类型的注解（如果存在这样的注解），否则返回 null。注解可以是继承的，也可以是直接存在于此元素上的
+     */
+    @Override
+    <A extends Annotation> A getAnnotation(Class<A> annotationType);
+}
+
+Element 代表程序的元素，在注解处理过程中，编译器会扫描所有的Java源文件，并将源码中的每一个部分都看作特定类型的 Element。
+它可以代表包、类、接口、方法、字段等多种元素种类，具体看getKind()方法中所指代的种类，每个Element 代表一个静态的、语言级别的构件。
+Element 有五个直接子接口，它们分别代表一种特定类型的元素，如下：
+PackageElement       表示一个包程序元素
+TypeElement          表示一个类或接口程序元素
+VariableElement      表示一个字段、enum 常量、方法或构造方法参数、局部变量或异常参数
+ExecutableElement    表示某个类或接口的方法、构造方法或初始化程序（静态或实例），包括注解类型元素
+TypeParameterElement 表示一般类、接口、方法或构造方法元素的泛型参数
+
+在开发中Element可根据实际情况强转为以上5种中的一种，它们都带有各自独有的方法，来看个简单的例子：
+package com.example;        // PackageElement 
+import java.util.List;
+public class Sample         // TypeElement  
+        <T extends List> {  // TypeParameterElement  
+    private int num;        // VariableElement
+    String name;            // VariableElement
+
+    public Sample() {
+    }      // ExecuteableElement  
+
+    public void setName(    // ExecuteableElement  
+                            String name     // VariableElement  
+    ) {
+    }
+}
+源码中的每个部分都作为一个Element，而TypeElement对应着一种更具体的类型元素。
+根据上面的列表可以知道，一种特定的元素一般不止指代一种元素种类(ElementKind)，
+比如TypeElement可以指代类或接口，要知道一个元素的准确的种类需要调用getKind()方法，
+该方法返回一个ElementKind枚举值来表示具体种类，如下：
+public enum ElementKind {
+    /**
+     * A package.
+     */
+    PACKAGE,
+    /**
+     * An enum type.
+     */
+    ENUM,
+    /**
+     * A class not described by a more specific kind (like {@code ENUM}).
+     */
+    CLASS,
+    /**
+     * An annotation type.
+     */
+    ANNOTATION_TYPE,
+    /**
+     * An interface not described by a more specific kind
+     */
+    INTERFACE,
+
+    // Variables  
+    /**
+     * An enum constant.
+     */
+    ENUM_CONSTANT,
+    /**
+     * A field not described by a more specific kind
+     */
+    FIELD,
+    /**
+     * A parameter of a method or constructor.
+     */
+    PARAMETER,
+    /**
+     * A local variable.
+     */
+    LOCAL_VARIABLE,
+    /**
+     * A parameter of an exception handler.
+     */
+    EXCEPTION_PARAMETER,
+
+    // Executables  
+    /**
+     * A method.
+     */
+    METHOD,
+    /**
+     * A constructor.
+     */
+    CONSTRUCTOR,
+    /**
+     * A static initializer.
+     */
+    STATIC_INIT,
+    /**
+     * An instance initializer.
+     */
+    INSTANCE_INIT,
+    /**
+     * A type parameter.
+     */
+    TYPE_PARAMETER,
+
+    /**
+     * An implementation-reserved element. This is not the element you are looking for.
+     */
+    OTHER,
+    /**
+     * A resource variable.
+     *
+     * @since 1.7
+     */
+    RESOURCE_VARIABLE;
+}
+
+上面管ElementKind称作元素的种类，因为它和元素的类型TypeMirror很容易混掉。
+TypeMirror表示的是 Java 编程语言中的类型，
+比如上面例子中的字段String name，它的元素种类为FIELD，而它的元素类型为DECLARED表示一个类类型，
+这里对应Java 编程语言中的类型为java.lang.String。
+Element代表的是源代码上的元素，TypeMirror代表的是Element对应Java 编程语言中的类型。
+/**
+ * 表示 Java 编程语言中的类型
+ */
+public interface TypeMirror {
+    /**
+     * 返回此类型的种类，一个 TypeKind 枚举值：
+     */
+    TypeKind getKind();
+}
+TypeMirror和Element一样有一个getKind()方法来获取具体的类型，方法返回一个枚举值，如下：
+public enum TypeKind {
+    /**
+     * The primitive type {@code boolean}.
+     */
+    BOOLEAN,
+    /**
+     * The primitive type {@code byte}.
+     */
+    BYTE,
+    /**
+     * The primitive type {@code short}.
+     */
+    SHORT,
+    /**
+     * The primitive type {@code int}.
+     */
+    INT,
+    /**
+     * The primitive type {@code long}.
+     */
+    LONG,
+    /**
+     * The primitive type {@code char}.
+     */
+    CHAR,
+    /**
+     * The primitive type {@code float}.
+     */
+    FLOAT,
+    /**
+     * The primitive type {@code double}.
+     */
+    DOUBLE,
+    /**
+     * The pseudo-type corresponding to the keyword {@code void}.
+     */
+    VOID,
+    /**
+     * A pseudo-type used where no actual type is appropriate.
+     */
+    NONE,
+    /**
+     * The null type.
+     */
+    NULL,
+    /**
+     * An array type.
+     */
+    ARRAY,
+    /**
+     * A class or interface type.
+     */
+    DECLARED,
+    /**
+     * A class or interface type that could not be resolved.
+     */
+    ERROR,
+    /**
+     * A type variable.
+     */
+    TYPEVAR,
+    /**
+     * A wildcard type argument.
+     */
+    WILDCARD,
+    /**
+     * A pseudo-type corresponding to a package element.
+     */
+    PACKAGE,
+    /**
+     * A method, constructor, or initializer.
+     */
+    EXECUTABLE,
+    /**
+     * An implementation-reserved type. This is not the type you are looking for.
+     */
+    OTHER,
+    /**
+     * A union type.
+     */
+    UNION,
+    /**
+     * An intersection type.
+     */
+    INTERSECTION;
+}
+可以看到和ElementKind所描述的是不同的方面。不知道这样说明的清不清楚，其实这种概念上的东西自己用几次会有更好理解，这东西就说到这。
+
+2. Element的直接子接口
+    这里列一下5个Element子接口常用方法，大部分描述是从JDK PAI手册中截取。
+这东西你也没必要一次看完，大概了解一下，等到需要用的时候能够知道有这么个东西就行了。
+>>>>> TypeElement
+/**
+ * 表示一个类或接口程序元素
+ */
+public interface TypeElement {
+
+    /**
+     * 返回此类型元素的嵌套种类
+     * 某一类型元素的嵌套种类 (nesting kind)。类型元素的种类有四种：top-level（顶层）、member（成员）、local（局部）和 anonymous（匿名）
+     */
+    NestingKind getNestingKind();
+
+    /**
+     * 返回此类型元素的完全限定名称。更准确地说，返回规范 名称。对于没有规范名称的局部类和匿名类，返回一个空名称.
+     * 一般类型的名称不包括对其形式类型参数的任何引用。例如，接口 java.util.Set<E> 的完全限定名称是 "java.util.Set"
+     */
+    Name getQualifiedName();
+
+    /**
+     * 返回此类型元素的直接超类。如果此类型元素表示一个接口或者类 java.lang.Object，则返回一个种类为 NONE 的 NoType
+     */
+    TypeMirror getSuperclass();
+
+    /**
+     * 返回直接由此类实现或直接由此接口扩展的接口类型
+     */
+    List<? extends TypeMirror> getInterfaces();
+
+    /**
+     * 按照声明顺序返回此类型元素的形式类型参数
+     */
+    List<? extends TypeParameterElement> getTypeParameters();
+}  
+
+>>>>> PackageElement
+/**
+ * 表示一个包程序元素.
+ */
+public interface PackageElement {
+
+    /**
+     * 返回此包的完全限定名称。该名称也是包的规范名称
+     */
+    Name getQualifiedName();
+
+    /**
+     * 如果此包是一个未命名的包，则返回 true，否则返回 false
+     */
+    boolean isUnnamed();
+} 
+
+
+>>>>> ExecutableElement
+/**
+ * 表示某个类或接口的方法、构造方法或初始化程序（静态或实例），包括注解类型元素
+ */
+public interface ExecutableElement {
+
+    /**
+     * 获取按照声明顺序返回形式类型参数元素
+     */
+    List<? extends TypeParameterElement> getTypeParameters();
+
+    /**
+     * 获取返回的类型元素
+     */
+    TypeMirror getReturnType();
+
+    /**
+     * 获取形参元素
+     */
+    List<? extends VariableElement> getParameters();
+
+    /**
+     * 如果此方法或构造方法接受可变数量的参数，则返回 true，否则返回 false
+     */
+    boolean isVarArgs();
+
+    /**
+     * 按声明顺序返回此方法或构造方法的 throws 子句中所列出的异常和其他 throwable
+     */
+    List<? extends TypeMirror> getThrownTypes();
+
+    /**
+     * 如果此 executable 是一个注解类型元素，则返回默认值。如果此方法不是注解类型元素，或者它是一个没有默认值的注解类型元素，则返回 null
+     */
+    AnnotationValue getDefaultValue();
+}
+
+
+>>>>> VariableElement
+/**
+ * 表示一个字段、enum 常量、方法或构造方法参数、局部变量或异常参数
+ */
+public interface VariableElement {
+
+    /**
+     * 如果此变量是一个被初始化为编译时常量的 static final 字段，则返回此变量的值。否则返回 null。
+     * 该值为基本类型或 String，如果该值为基本类型，则它被包装在适当的包装类中（比如 Integer）。
+     * 注意，并非所有的 static final 字段都将具有常量值。特别是，enum 常量不 被认为是编译时常量。要获得一个常量值，字段的类型必须是基本类型或 String
+     */
+    Object getConstantValue();
+}  
+
+>>>> TypeParameterElement
+/**
+ * 表示一般类、接口、方法或构造方法元素的泛型参数.
+ */
+public interface TypeParameterElement {
+
+    /**
+     * 返回由此类型参数参数化的一般类、接口、方法或构造方法
+     */
+    Element getGenericElement();
+
+    /**
+     * 返回此类型参数的边界。它们是用来声明此类型参数的 extends 子句所指定的类型。
+     * 如果没有使用显式的 extends 子句，则认为 java.lang.Object 是唯一的边界
+     */
+    List<? extends TypeMirror> getBounds();
+}
+
+
+3. 注解处理器的辅助接口
+在自定义注解处理器的初始化接口，可以获取到以下4个辅助接口：
+public class MyProcessor extends AbstractProcessor {
+    private Types typeUtils;
+    private Elements elementUtils;
+    private Filer filer;
+    private Messager messager;
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        typeUtils = processingEnv.getTypeUtils();
+        elementUtils = processingEnv.getElementUtils();
+        filer = processingEnv.getFiler();
+        messager = processingEnv.getMessager();
+    }
+}
+其中Filer之前有用过，一般我们会用它配合JavaPoet来生成我们需要的.java文件，这里就不再提它的用法。
+
+4. Messager
+    Messager提供给注解处理器一个报告错误、警告以及提示信息的途径。
+它不是注解处理器开发者的日志工具，而是用来写一些信息给使用此注解器的第三方开发者的。
+在官方文档中描述了消息的不同级别中非常重要的是Kind.ERROR，因为这种类型的信息用来表示我们的注解处理器处理失败了。
+很有可能是第三方开发者错误的使用了注解。这个概念和传统的Java应用有点不一样，在传统Java应用中我们可能就抛出一个异常Exception。
+如果你在process()中抛出一个异常，那么运行注解处理器的JVM将会崩溃（就像其他Java应用一样），
+使用我们注解处理器第三方开发者将会从javac中得到非常难懂的出错信息，因为它包含注解处理器的堆栈跟踪（Stacktace）信息。
+因此，注解处理器就有一个Messager类，它能够打印非常优美的错误信息。
+除此之外，你还可以连接到出错的元素。在像现在的IDE（集成开发环境）中，第三方开发者可以直接点击错误信息，
+IDE将会直接跳转到第三方开发者项目的出错的源文件的相应的行。
+
+看下接口代码:
+public interface Messager {
+
+    void printMessage(Diagnostic.Kind kind, CharSequence msg);
+
+    void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e);
+
+    void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a);
+
+    void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a, AnnotationValue v);
+}
+方法都比较好懂，主要需要指定打印的信息类型和描述字符串。
+
+
+5. Types
+Types是一个用来处理TypeMirror的工具，看下代码就好了，提供的方法如下：
+/**
+ * 一个用来处理TypeMirror的工具
+ */
+public interface Types {
+    /**
+     * 返回对应于类型的元素。该类型可能是 DeclaredType 或 TypeVariable。如果该类型没有对应元素，则返回 null.
+     */
+    Element asElement(TypeMirror t);
+
+    /**
+     * 测试两个 TypeMirror 对象是否表示同一类型.
+     * 警告：如果此方法两个参数中有一个表示通配符，那么此方法将返回 false
+     */
+    boolean isSameType(TypeMirror t1, TypeMirror t2);
+
+    /**
+     * 测试一种类型是否是另一个类型的子类型。任何类型都被认为是其本身的子类型.
+     *
+     * @return 当且仅当第一种类型是第二种类型的子类型时返回 true
+     * @throws IllegalArgumentException 如果给定一个 executable 或 package 类型
+     */
+    boolean isSubtype(TypeMirror t1, TypeMirror t2);
+
+    /**
+     * 测试一种类型是否可以指派给另一种类型.
+     *
+     * @return 当且仅当第一种类型可以指派给第二种类型时返回 true
+     * @throws IllegalArgumentException 如果给定一个 executable 或 package 类型
+     */
+    boolean isAssignable(TypeMirror t1, TypeMirror t2);
+
+    /**
+     * 测试一个类型参数是否包含 另一个类型参数.
+     *
+     * @return 当且仅当第一种类型包含第二种类型时返回 true
+     * @throws IllegalArgumentException 如果给定一个 executable 或 package 类型
+     */
+    boolean contains(TypeMirror t1, TypeMirror t2);
+
+    /**
+     * 测试一个方法的签名是否是另一个方法的子签名.
+     *
+     * @return 当且仅当第一个签名是第二个签名的子签名时返回 true
+     */
+    boolean isSubsignature(ExecutableType m1, ExecutableType m2);
+
+    /**
+     * 返回类型的直接超类型。interface 类型将出现在列表的最后（如果有）.
+     *
+     * @return 直接超类型；如果没有，则返回一个空列表
+     * @throws IllegalArgumentException 如果给定一个 executable 或 package 类型
+     */
+    List<? extends TypeMirror> directSupertypes(TypeMirror t);
+
+    /**
+     * 返回删除状态的类型.
+     *
+     * @return 删除状态的给定类型
+     * @throws IllegalArgumentException 如果给定一个 package 类型
+     */
+    TypeMirror erasure(TypeMirror t);
+
+    /**
+     * 返回给定基本类型的装箱 (boxed) 值类型的类。即应用 boxing 转换.
+     *
+     * @param p 要转换的基本类型
+     * @return 类型 p 的装箱值类型的类
+     */
+    TypeElement boxedClass(PrimitiveType p);
+
+    /**
+     * 返回给定类型的拆箱 (unboxed) 值类型（基本类型）。即应用 unboxing 转换.
+     *
+     * @param t 要拆箱的类型
+     * @return 类型 t 的拆箱值类型
+     * @throws IllegalArgumentException 如果给定类型无法进行 unboxing 转换
+     */
+    PrimitiveType unboxedType(TypeMirror t);
+
+    /**
+     * 对类型应用 capture 转换.
+     *
+     * @return 应用 capture 转换的结果
+     * @throws IllegalArgumentException 如果给定 executable 或 package 类型
+     */
+    TypeMirror capture(TypeMirror t);
+
+    /**
+     * 返回基本类型.
+     *
+     * @param kind 要返回的基本类型的种类
+     * @return 一个基本类型
+     * @throws IllegalArgumentException 如果 kind 不是基本种类
+     */
+    PrimitiveType getPrimitiveType(TypeKind kind);
+
+    /**
+     * 返回 null 类型。该类型是 null 的类型.
+     */
+    NullType getNullType();
+
+    /**
+     * 返回在实际类型不适用的地方所使用的伪类型。
+     * 要返回的类型的种类可以是 VOID 或 NONE。对于包，可以使用 Elements.getPackageElement(CharSequence).asType() 替代.
+     *
+     * @param kind 要返回的类型的种类
+     * @return 种类 VOID 或 NONE 的伪类型
+     * @throws IllegalArgumentException 如果 kind 无效
+     */
+    NoType getNoType(TypeKind kind);
+
+    /**
+     * 返回具有指定组件类型的数组类型.
+     *
+     * @throws IllegalArgumentException 如果组件类型对于数组无效
+     */
+    ArrayType getArrayType(TypeMirror componentType);
+
+    /**
+     * 返回新的通配符类型参数。可以指定通配符边界中的一个，也可以都不指定，但不能都指定.
+     *
+     * @param extendsBound 扩展（上）边界；如果没有，则该参数为 null
+     * @param superBound   超（下）边界；如果没有，则该参数为 null
+     * @return 新的通配符
+     * @throws IllegalArgumentException 如果边界无效
+     */
+    WildcardType getWildcardType(TypeMirror extendsBound,
+                                 TypeMirror superBound);
+
+    /**
+     * 返回对应于类型元素和实际类型参数的类型。例如，如果给定 Set 的类型元素和 String 的类型镜像，那么可以使用此方法获取参数化类型 Set<String>.
+     * <p>
+     * 类型参数的数量必须等于类型元素的形式类型参数的数量，或者等于 0。如果等于 0，并且类型元素是泛型，则返回该类型元素的原始类型.
+     * <p>
+     * 如果返回一个参数化类型，则其类型元素不得包含在一般外部类中。
+     * 例如，首先使用此方法获取类型 Outer<String>，然后调用 getDeclaredType(DeclaredType, TypeElement, TypeMirror...)，
+     * 可以构造参数化类型 Outer<String>.Inner<Number>.
+     *
+     * @param typeElem 类型元素
+     * @param typeArgs 实际类型参数
+     * @return 对应于类型元素和实际类型参数的类型
+     * @throws IllegalArgumentException 如果给定的类型参数太多或太少，或者提供不合适的类型参数或类型元素
+     */
+    DeclaredType getDeclaredType(TypeElement typeElem, TypeMirror... typeArgs);
+
+    /**
+     * 根据给定的包含类型，返回对应于类型元素和实际类型参数的类型（它是给定包含类型的成员）.例子如上
+     * 如果包含类型是一个参数化类型，则类型参数的数量必须等于 typeElem 的形式类型参数的数量。
+     * 如果包含类型不是参数化的，或者为 null，则此方法等效于 getDeclaredType(typeElem, typeArgs）.
+     *
+     * @param containing 包含类型；如果没有，则该参数为 null
+     * @param typeElem   类型元素
+     * @param typeArgs   实际类型参数
+     * @return 对应于类型元素和实际类型参数的类型，该类型包含在给定类型中
+     * @throws IllegalArgumentException 如果给定的类型参数太多或太少，或者提供了不合适的类型参数、类型元素或包含类型
+     */
+    DeclaredType getDeclaredType(DeclaredType containing,
+                                 TypeElement typeElem, TypeMirror... typeArgs);
+
+    /**
+     * 当元素被视为给定类型的成员或者直接由给定类型包含时，返回该元素的类型。
+     * 例如，被视为参数化类型 Set<String> 的成员时，Set.add 方法是参数类型为 String 的 ExecutableType.
+     *
+     * @param containing 包含类型
+     * @param element    元素
+     * @return 从包含类型来看的元素的类型
+     * @throws IllegalArgumentException 如果元素对于给定类型无效
+     */
+    TypeMirror asMemberOf(DeclaredType containing, Element element);
+}
+
+
+6. Elements
+Elements是一个用来处理Element的工具，提供的方法如下：
+/**
+ * 一个用来处理Element的工具
+ */
+public interface Elements {
+
+    /**
+     * 返回已给出其完全限定名称的包.
+     *
+     * @param name 完全限定的包名称；对于未命名的包，该参数为 ""
+     * @return 指定的包；如果没有找到这样的包，则返回 null
+     */
+    PackageElement getPackageElement(CharSequence name);
+
+    /**
+     * 返回已给出其规范名称的类型元素.
+     *
+     * @param name 规范名称
+     * @return 指定的类型元素；如果没有找到这样的元素，则返回 null
+     */
+    TypeElement getTypeElement(CharSequence name);
+
+    /**
+     * 返回注释元素的值，包括默认值.
+     * 此值是以映射的形式返回的，该映射将元素与其相应的值关联。只包括那些注释中明确存在其值的元素，不包括那些隐式假定其默认值的元素。
+     * 映射的顺序与值出现在注释源中的顺序匹配
+     *
+     * @param a 要检查的注释
+     * @return 注释元素的值，包括默认值
+     * @see AnnotationMirror#getElementValues()
+     */
+    Map<? extends ExecutableElement, ? extends AnnotationValue>
+    getElementValuesWithDefaults(AnnotationMirror a);
+
+    /**
+     * 返回元素的文档（"Javadoc"）注释文本
+     *
+     * @param e 将被检查的元素
+     * @return 元素的文档注释；如果没有，则返回 null
+     */
+    String getDocComment(Element e);
+
+    /**
+     * 如果元素已过时，则返回 true，否则返回 false.
+     *
+     * @param e 将被检查的元素
+     * @return 如果元素已过时，则返回 true，否则返回 false
+     */
+    boolean isDeprecated(Element e);
+
+    /**
+     * 返回类型元素的二进制名称.
+     *
+     * @param type 将被检查的类型元素
+     * @return 二进制名称
+     */
+    Name getBinaryName(TypeElement type);
+
+    /**
+     * 返回元素的包。包的包是它本身.
+     *
+     * @param type 将被检查的元素
+     * @return 元素的包
+     */
+    PackageElement getPackageOf(Element type);
+
+    /**
+     * 返回类型元素的所有成员，不管是继承的还是直接声明的。对于一个类，结果还包括其构造方法，但不包括局部类或匿名类.
+     * <p>
+     * 注意，使用 ElementFilter 中的方法可以隔离某个种类的元素.
+     *
+     * @param type 将被检查的类型
+     * @return 类型的所有成员
+     */
+    List<? extends Element> getAllMembers(TypeElement type);
+
+    /**
+     * 返回元素的所有注释，不管是继承的还是直接存在的.
+     *
+     * @param e 将被检查的元素
+     * @return 元素的所有注释
+     */
+    List<? extends AnnotationMirror> getAllAnnotationMirrors(Element e);
+
+    /**
+     * 测试一个类型、方法或字段是否隐藏了另一个类型、方法或字段.
+     *
+     * @param hider  第一个元素
+     * @param hidden 第二个元素
+     * @return 当且仅当第一个元素隐藏了第二个元素时返回 true
+     */
+    boolean hides(Element hider, Element hidden);
+
+    /**
+     * 测试一个方法（作为给定类型的成员）是否重写了另一个方法。当非抽象方法重写抽象方法时，还可以说成是前者实现 了后者.
+     *
+     * @param overrider  第一个方法，可能是 overrider
+     * @param overridden 第二个方法，可能被重写
+     * @param type       第一个方法是其成员的类型
+     * @return 当且仅当第一个方法重写第二个方法时返回 true
+     */
+    boolean overrides(ExecutableElement overrider, ExecutableElement overridden,
+                      TypeElement type);
+
+    /**
+     * 返回表示基本值或字符串的常量表达式 文本。返回文本的形式是一种适合于表示源代码中的值的形式.
+     *
+     * @param value 基本值或字符串
+     * @return 常量表达式的文本
+     * @throws IllegalArgumentException 如果参数不是基本值或字符串
+     * @see VariableElement#getConstantValue()
+     */
+    String getConstantExpression(Object value);
+
+    /**
+     * 按指定顺序将元素的表示形式打印到给定 writer。此方法的主要用途是诊断。输出的具体格式没有 指定并且是可以更改的.
+     *
+     * @param w        输出打印到的 writer
+     * @param elements 要打印的元素
+     */
+    void printElements(java.io.Writer w, Element... elements);
+
+    /**
+     * 返回与参数具有相同字符序列的名称.
+     *
+     * @param cs 将以名称形式返回的字符序列
+     * @return 返回与参数具有相同字符序列的名称
+     */
+    Name getName(CharSequence cs);
+
+    /**
+     * 如果类型是一个泛型接口则返回 true，否则返回 false
+     *
+     * @param type 将被检查的类型
+     * @return 如果类型是一个泛型接口则返回 true，否则返回 false
+     * @since 1.8
+     */
+    boolean isFunctionalInterface(TypeElement type);
+}
+
+atricle address:
+1. http://blog.csdn.net/github_35180164/article/details/52171135
+

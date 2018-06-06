@@ -1,0 +1,7 @@
+---------
+共享内存的 demo
+https://github.com/alximw/AndroidNativeService-meets-ASHMEM.git
+
+微信公众号中的何俊林编写的播放器代码
+https://github.com/Cuieney/kotlin-life.git
+https://mp.weixin.qq.com/mp/homepage?__biz=MzI2OTQxMTM4OQ==&hid=1&sn=e565ca314812aef072a5c53eff8afd52&scene=18&uin=&key=&devicetype=Windows+10&version=62060038&lang=en&ascene=7&winzoom=1

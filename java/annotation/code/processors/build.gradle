@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+
+    implementation project(':annotation')
+    implementation 'com.google.auto.service:auto-service:1.0-rc2'
+
+    implementation 'com.squareup:javapoet:1.10.0'
+    implementation 'org.apache.commons:commons-lang3:3.7'
+}
+
+//compileJava {
+//    sourceCompatibility = '1.7'
+//    targetCompatibility = '1.7'
+//}

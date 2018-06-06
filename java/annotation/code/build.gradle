@@ -1,0 +1,37 @@
+//
+// author  : patrick.dai
+// datetime: 2018/02/10 10:10:10
+//
+
+buildscript {
+
+    repositories {
+        google()
+        jcenter()
+        //mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.0.1'
+        //classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+    }
+}
+
+ext {
+    compileSdkVersion = 27
+    buildToolsVersion = "27.0.2"
+    supportLibVersion = "27.0.2"
+    minSdkVersion = 21
+    targetSdkVersion = 27
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

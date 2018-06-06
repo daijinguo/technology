@@ -1,0 +1,16 @@
+
+android 事件分发机制文章
+1. 图解 Android 事件分发机制 
+http://www.jianshu.com/p/e99b5e8bd67b
+
+2. Android View体系（五）从源码解析View的事件分发机制
+http://liuwangshu.cn/application/view/5-dispatchingevents.html
+
+
+刘望舒 android 的知识体系结构体制
+http://blog.csdn.net/itachi85/article/details/50705350
+
+3. android TV 开发
+http://blog.csdn.net/sk719887916/article/details/44780669
+http://blog.csdn.net/sk719887916/article/details/44781475
+

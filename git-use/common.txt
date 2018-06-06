@@ -1,0 +1,7 @@
+1. window 上鉴权失败问题
+使用场景： 在window 下使用 git 提供的工具，在上传的过程中使用弹出的用户名和密码对话框来输入密码失败后，以后push 一直失败。
+解决方法：
+1> 进入 window的 Control Panel --> User Accounts 下的
+   Manager you credentials  --> Windows Credentials 然后找到类似 git 的内容将其删除再进行push操作
+
+说实在的 window 的这个操作真心没有 linux 好用

@@ -1,0 +1,3 @@
+dai.android.processors.MyProcessor
+dai.android.processors.HelloWorldProcess
+dai.android.processors.FactoryProcessor
