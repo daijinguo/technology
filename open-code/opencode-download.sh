@@ -168,8 +168,10 @@ if [ ! -d "01.androidplayer" ]; then
 fi
 
 if [ ! -d "02.affmpeg" ]; then
-   echo "https://github.com/goto0x00/affmpeg.git"
-   git clone https://github.com/goto0x00/affmpeg.git 02.affmpeg
+   echo "https://github.com/daijinguo/affmpeg.git"
+   git clone https://github.com/daijinguo/affmpeg.git 02.affmpeg
+   git config user.name "YourName"
+   git config user.email "YourEmail@host.com"
 fi
 
 #if [ ! -d "03.dplayer" ]; then
@@ -180,6 +182,8 @@ fi
 if [ ! -d "03.sdl-game" ]; then
    echo "https://git.coding.net/gooogle/dplayer.git"
    git clone https://github.com/daijinguo/sdl-game.git 03.sdl-game
+   git config user.name "YourName"
+   git config user.email "YourEmail@host.com"
 fi
 
 # part V} +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
