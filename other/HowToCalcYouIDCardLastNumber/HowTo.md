@@ -23,7 +23,7 @@
 int  base  [] = { 7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2 };
 char values[] = { '1', '0', 'x', '9', '8', '7', '6', '5', '4', '3', '2' };
 
-unsigned int function(const char* card){
+int function(const char* card){
     if(NULL == card) {
         return -1;
     }
