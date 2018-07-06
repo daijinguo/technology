@@ -1,13 +1,13 @@
 这介绍一些如何在linux系统上组合 nginx 和 php
 
-# 在 debian 系统上安装
+# 在 debian 10 系统上安装
 
 ## 安装相关需要的软件
 
 ```shell
 apt-get install -y php php-all-dev php-http php-uuid 
 apt-get install -y libapache2-mod-php7.2 php7.2 php7.2-bcmath php7.2-cgi php7.2-bz2 php7.2-cli php7.2-common
-apt-get install -y php7.2-curl php7.2-dev php7.2-fpm php7.2-json php7.2-mbstring php7.2-mysql php7.2-intl 
+apt-get install -y php7.2-curl php7.2-dev php7.2-fpm php7.2-json php7.2-mbstring php7.2-mysql php7.2-intl
 apt-get install -y php7.2-opcache php7.2-pspell php7.2-soap php7.2-sqlite3 php7.2-tidy php7.2-xml php7.2-xmlrpc
 apt-get install -y php7.2-xsl php7.2-zip
 
@@ -126,4 +126,73 @@ cp nginx.conf.default nginx.conf
 + https://blog.csdn.net/heluan123132/article/details/73468084
 + https://cuijunwei.com/2226
 + https://blog.csdn.net/icandoit_2014/article/details/71454481
+
+
+
+# debian 9 上安装 php
+
+## 安装相关的软件
+
+```shell
+apt install -y libxml2-dev libxml2 libxslt1.1 libxslt1-dev
+apt install -y libgd-dev
+apt install -y libapache2-mod-geoip
+apt install -y geoip-bin libgeoip-dev libgeoip1
+
+apt install -y php-amqp php-amqplib php-apcu php-apcu-bc php-ast
+apt install -y php-auth-sasl php-cache-lite
+apt install -y php-codesniffer php-cli-prompt
+apt install -y php-console-commandline php-console-table
+apt install -y php-date php-db php libapache2-mod-php libphp-embed php-all-dev
+apt install -y php-bcmath php-bz2 php-cgi php-cli php-common
+apt install -y php-curl php-dev php-enchant php-fpm
+apt install -y php-gd php-gmp php-imap php-interbase php-intl php-json
+apt install -y php-ldap php-mbstring php-mcrypt php-mysql
+apt install -y libapache2-mod-php7.0 libphp7.0-embed php7.0
+apt install -y php7.0-bcmath php7.0-bz2 php7.0-cgi php7.0-cli php7.0-common
+apt install -y php7.0-curl php7.0-dba php7.0-dev php7.0-enchant
+apt install -y php7.0-fpm php7.0-gd php7.0-gmp php7.0-interbase php7.0-intl
+apt install -y php7.0-json php7.0-ldap php7.0-mbstring php7.0-mcrypt
+apt install -y php7.0-mysql php7.0-opcache php7.0-pspell php7.0-readline
+apt install -y php7.0-recode php7.0-soap php7.0-sqlite3 php7.0-tidy
+apt install -y php7.0-xml php7.0-xmlrpc php7.0-xsl php7.0-zip php7cc
+
+apt install -y net-tools
+```
+
+
+
+## nginx 相关 config
+
+``` config
+./configure --prefix=/home/dai/bin/nginx \
+            --with-threads \
+            --with-file-aio \
+            --with-http_ssl_module \
+            --with-http_v2_module \
+            --with-http_realip_module \
+            --with-http_addition_module \
+            --with-http_xslt_module=dynamic \
+            --with-http_image_filter_module=dynamic \
+            --with-http_geoip_module=dynamic \
+            --with-http_sub_module \
+            --with-http_dav_module \
+            --with-http_flv_module \
+            --with-http_mp4_module \
+            --with-http_gunzip_module \
+            --with-http_gzip_static_module \
+            --with-http_auth_request_module \
+            --with-http_random_index_module \
+            --with-http_secure_link_module \
+            --with-http_degradation_module \
+            --with-http_slice_module \
+            --with-http_stub_status_module \
+            --with-stream=dynamic \
+            --with-stream_ssl_module \
+            --with-stream_realip_module \
+            --with-stream_geoip_module=dynamic \
+            --with-stream_ssl_preread_module \
+            --with-compat \
+            --with-debug
+```
 
