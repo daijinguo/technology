@@ -202,6 +202,25 @@ if [ ! -d "04.aplayer" ]; then
   cd ..
 fi
 
+if [ ! -d "05.opengl" ]; then
+  #statements
+  echo "https://gitlab.com/AndroidOpenCode/LearnOpenGL.git"
+  git clone https://gitlab.com/AndroidOpenCode/LearnOpenGL.git 05.opengl
+  cd 05.opengl
+  git config user.name "YourName"
+  git config user.email "YourEmail@host.com"
+  cd ..
+fi
+
+if [ ! -d "06.plugins_01" ]; then  
+  echo "https://github.com/daijinguo/sn_wpp_compile.git"
+  git clone https://github.com/daijinguo/sn_wpp_compile.git 06.plugins_01
+  cd 06.plugins_01
+  git config user.name "YourName"
+  git config user.email "YourEmail@host.com"
+  cd ..
+fi
+
 # part V} +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
