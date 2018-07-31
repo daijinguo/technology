@@ -63,6 +63,12 @@ if [ ! -d "04.fat-aar-plugin" ]; then
    git clone https://github.com/Vigi0303/fat-aar-plugin.git 04.fat-aar-plugin
 fi
 
+# II.5  fat-aar-plugin
+if [ ! -d "05.fataar-gradle-plugin" ]; then
+   echo "download the 05.fataar-gradle-plugin ..."
+   git clone https://github.com/Mobbeel/fataar-gradle-plugin.git 05.fataar-gradle-plugin
+fi
+
 # II.5  AndroidModulePattern
 if [ ! -d "05.AndroidModulePattern" ]; then
    echo "download the fat-aar-plugin ..."
