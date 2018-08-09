@@ -134,6 +134,26 @@ https://gstreamer.freedesktop.org/documentation/installing/building-from-source-
 ./cerbero-uninstalled -c config/cross-android.cbc package gstreamer-1.0
 ```
 
+相关的 config 总结:
++ Linux host bootstrap
+```shell
+./cerbero-uninstalled -c config/linux.cbc bootstrap
+```
+
++ Mac OS X host bootstrap
+```shell
+./cerbero-uninstalled -c config/osx-x86-64.cbc bootstrap
+```
+
++ iOS cross-compile bootstrap
+```shell
+./cerbero-uninstalled -c config/cross-ios-universal.cbc bootstrap
+```
+
++ Android cross-compile bootstrap
+```shell
+./cerbero-uninstalled -c config/cross-android-armv7.cbc bootstrap
+```
 
 
 
