@@ -168,6 +168,7 @@ https://gstreamer.freedesktop.org/documentation/installing/building-from-source-
 + Android cross-compile bootstrap
 ```shell
 ./cerbero-uninstalled -c config/cross-android-armv7.cbc bootstrap
+./cerbero-uninstalled -c config/cross--android-armv7.cbc package gstreamer-1.0
 ```
 
 
