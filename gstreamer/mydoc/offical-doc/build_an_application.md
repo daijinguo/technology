@@ -274,3 +274,72 @@ GStreamer 还将通过使用 `GstBus` 来处理从管道的线程切换到应用
 
 当将容器或管道设置为某个目标状态时，它通常会自动将状态更改传播到容器或管道内的所有元素，因此通常只需要设置顶级管道的状态来启动管道或关闭管道。
 但是，当将动态地添加 element 到已经运行的管道中时，例如从 "pad-added" 的信号回调中，您需要自己使用 `gst_element_set_state()` or `gst_element_sync_state_with_parent()` 来将其设置为所需的目标状态。
+
+
+
+
+# Bins
+
+[Offical document about bins](https://gstreamer.freedesktop.org/documentation/application-development/basics/bins.html)
+
+bin 是一个 element 容器。可以将元素添加到 bin 中。由于bin本身是一个 element ，所以可以用与任何其他 element 相同的方式来处理 bin。因此，整个前一章（element）也适用于 bin。
+
+
+## What are bins
+
+Bins 允许您将一组链接元素组合成一个逻辑元素。你不再处理单独的元素，而是只使用一个元素 -- bin。
+我们将看到，这将是非常强大的，当你要构建复杂的 pipelines ，因为它允许你以较小的块打破管道。  
+
+bin 也将管理包含在其中的元素。它将执行元素上的状态变化以及收集和转发总线消息。  
+![bin-element](pics/006-bin-element.png)
+
+有一种特殊类型的 bin 可供 GStreamer 程序员使用：
++ A pipeline: 管理包含元素的同步和总线消息的通用容器。
+The toplevel bin has to be a pipeline，因此每个应用程序都需要至少其中一个。
+
+
+## Creating a bin
+
+Bins are created in the same way that other elements are created, i.e. using an element factory. 
+There are also convenience functions available (`gst_bin_new()` and `gst_pipeline_new()`). 
+To add elements to a bin or remove elements from a bin, you can use `gst_bin_add()` and `gst_bin_remove()`.
+注意: 被添加的 element, bin 将获得其所有权。如果您销毁了 bin，则元素将被解除引用。如果从 bin 中删除元素，则将自动`解引用`该元素。
+
+```c
+#include <gst/gst.h>
+
+int main (int argc, char *argv[])
+{
+    GstElement *bin, *pipeline, *source, *sink;
+
+    /* init */
+    gst_init (&argc, &argv);
+
+    /* create */
+    pipeline = gst_pipeline_new ("my_pipeline");
+    bin      = gst_bin_new ("my_bin");
+    source   = gst_element_factory_make ("fakesrc", "source");
+    sink     = gst_element_factory_make ("fakesink", "sink");
+
+    /* First add the elements to the bin */
+    gst_bin_add_many (GST_BIN (bin), source, sink, NULL);
+    /* add the bin to the pipeline */
+    gst_bin_add (GST_BIN (pipeline), bin);
+
+    /* link the elements */
+    gst_element_link (source, sink);
+
+    // [...]
+}
+```
+
+在bin中查找元素有多种方法，最常用的是 `gst_bin_get_by_name()` 和 `gst_bin_get_by_interface()`。 还可以使用函数 `gst_bin_iterate_elements()` 来迭代 bin 所包含的所有元素。有关详细信息，请参见 [GstBin](https://gstreamer.freedesktop.org/data/doc/gstreamer/stable/gstreamer/html/GstBin.html) 的 API 引用。
+
+
+## Bins manage states of their children
+
+​        Bins 管理包含在其中的所有元素的状态。如果将一个 bin（或一个pipeline, 它是一个特殊的顶级类型的 bin）使用函数 `gst_element_set_state()` 设置为某个目标 state，它将确保包含在它里面的所有元素也将被设置为这个状态。这意味着通常只需要设置顶级管道的 state 来启动管道或关闭管道。
+
+​        Bins 将对其所有子元素从 sink element 到  source element 执行状态更改。当上游元件被 PAUSED or PLAYING 时, 确保下游元件已经准备好接收数据。同样，当关闭时 sink elements 将首先被设置为 READY or NULL，这将导致上游元件接收一个 FLUSHING 错误并在 sink elements 被设置为 READY or NULL状态前，停止 数据流线程。
+
+​        请注意：如果元素被添加到已经运行的 bin 或 pipeline 中，比如如从一个 "pad-added" 信号回调中，它的状态将不会自动地与它添加到的bin或管道的当前状态或目标状态一致。相反，你需要将它设置为所需的目标国家自己使用 `gst_element_set_state()` or `gst_element_sync_state_with_parent()` 对已运行的管道添加元素时。
