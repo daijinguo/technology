@@ -9,25 +9,25 @@ static gboolean bus_call(GstBus *bus, GstMessage *msg, gpointer data)
 
     switch (GST_MESSAGE_TYPE(msg))
     {
-caseGST_MESSAGE_EOS:
-        g_print("End of stream\n");
-        g_main_loop_quit(loop);
-        break;
+        case GST_MESSAGE_EOS:
+            g_print("End of stream\n");
+            g_main_loop_quit(loop);
+            break;
 
-    case GST_MESSAGE_ERROR:
-    {
-        gchar *debug;
-        GError *error;
-        gst_message_parse_error(msg, &error, &debug);
-        g_free(debug);
-        g_printerr("ERROR:%s\n", error->message);
-        g_error_free(error);
-        g_main_loop_quit(loop);
-        break;
-    }
+        case GST_MESSAGE_ERROR:
+            {
+                gchar *debug;
+                GError *error;
+                gst_message_parse_error(msg, &error, &debug);
+                g_free(debug);
+                g_printerr("ERROR:%s\n", error->message);
+                g_error_free(error);
+                g_main_loop_quit(loop);
+                break;
+            }
 
-    default:
-        break;
+        default:
+            break;
     }
 
     return TRUE;
@@ -35,10 +35,10 @@ caseGST_MESSAGE_EOS:
 
 int main(int argc, char *argv[])
 {
-    GMainLoop *loop;
+    GMainLoop    *loop;
     // 定义组件
     GstElement *pipeline, *source, *decoder, *sink;
-    GstBus *bus;
+    GstBus     *bus;
 
     gst_init(&argc, &argv);
 

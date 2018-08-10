@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
     const gchar *nano_str;
-    guint major, minor, micro, nano;
+    guint        major, minor, micro, nano;
 
     gst_init(&argc, &argv);
 
@@ -14,10 +14,12 @@ int main(int argc, char *argv[])
     {
         nano_str = "(CVS)";
     }
+
     else if (nano == 2)
     {
         nano_str = "(Prerelease)";
     }
+
     else
     {
         nano_str = "";
