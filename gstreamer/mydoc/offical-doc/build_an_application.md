@@ -2,6 +2,8 @@
 
 # Elements
 
+[gstreamer 官网地址](https://gstreamer.freedesktop.org/documentation/application-development/basics/elements.html#visualisation-of-a-source-element)
+
 Gstreamer 开发最重要的一个对象是  GstElement, element 是媒体管道的基本构建块, 所有使用的不同高级组件都来自基本的 GstElement 所有 decoder, encoder, demuxer, video 或者 audio 输出时间上都是一个 GstElement。
 
 ## What are elements?
