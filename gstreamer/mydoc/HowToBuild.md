@@ -86,15 +86,30 @@ make && make install
 
 也可以直接使用 linux 编译好的一些发布版本：
 + opensuse    zypper search gst
-   ```shell
-   zypper install -y gstreamer gstreamer-devel gstreamer-doc gstreamer-plugins-bad
-   zypper install -y gstreamer-plugins-bad-devel gstreamer-plugins-bad-doc
-   zypper install -y gstreamer-plugins-base gstreamer-plugins-base-devel gstreamer-plugins-base-doc
-   zypper install -y gstreamer-plugins-good gstreamer-plugins-good-doc gstreamer-plugins-good-extra gstreamer-plugins-good-jack
-   zypper install -y gstreamer-plugins-libav gstreamer-plugins-libav-doc
-   zypper install -y gstreamer-transcoder gstreamer-transcoder-devel
-   ```
+```shell
+zypper install -y gstreamer gstreamer-devel gstreamer-doc gstreamer-plugins-bad
+zypper install -y gstreamer-plugins-bad-devel gstreamer-plugins-bad-doc
+zypper install -y gstreamer-plugins-base gstreamer-plugins-base-devel gstreamer-plugins-base-doc
+zypper install -y gstreamer-plugins-good gstreamer-plugins-good-doc gstreamer-plugins-good-extra gstreamer-plugins-good-jack
+zypper install -y gstreamer-plugins-libav gstreamer-plugins-libav-doc
+zypper install -y gstreamer-transcoder gstreamer-transcoder-devel
+```
 
++ ubuntu 中安装
+
+```shell
+apt-get install -y gstreamer1.0-alsa gstreamer1.0-doc gstreamer1.0-gl
+apt-get install -y gstreamer1.0-packagekit gstreamer1.0-plugins-base
+apt-get install -y gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-base-doc
+apt-get install -y gstreamer1.0-plugins-good gstreamer1.0-plugins-good-doc
+apt-get install -y gstreamer1.0-plugins-bad gstreamer1.0-plugins-bad-doc
+apt-get install -y gstreamer1.0-plugins-ugly gstreamer1.0-plugins-ugly-doc
+apt-get install -y gstreamer1.0-pulseaudio gstreamer1.0-tools gstreamer1.0-x
+apt-get install -y libgstreamer-gl1.0-0
+apt-get install -y libgstreamer-plugins-base1.0-0 libgstreamer-plugins-base1.0-dev
+apt-get install -y libgstreamer-plugins-good1.0-0 libgstreamer-plugins-good1.0-dev
+apt-get install -y libgstreamer1.0-0 libgstreamer1.0-dev
+```
 
 
 ## 为 android 编译
