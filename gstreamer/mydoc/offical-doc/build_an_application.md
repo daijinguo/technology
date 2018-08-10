@@ -343,3 +343,78 @@ int main (int argc, char *argv[])
 ​        Bins 将对其所有子元素从 sink element 到  source element 执行状态更改。当上游元件被 PAUSED or PLAYING 时, 确保下游元件已经准备好接收数据。同样，当关闭时 sink elements 将首先被设置为 READY or NULL，这将导致上游元件接收一个 FLUSHING 错误并在 sink elements 被设置为 READY or NULL状态前，停止 数据流线程。
 
 ​        请注意：如果元素被添加到已经运行的 bin 或 pipeline 中，比如如从一个 "pad-added" 信号回调中，它的状态将不会自动地与它添加到的bin或管道的当前状态或目标状态一致。相反，你需要将它设置为所需的目标国家自己使用 `gst_element_set_state()` or `gst_element_sync_state_with_parent()` 对已运行的管道添加元素时。
+
+
+# Bus
+
+[Offical Document about bus](https://gstreamer.freedesktop.org/documentation/application-development/basics/bus.html)
+
+​         Bus 是一个简单的系统，它负责将来自数据流线程的消息转发到应用程序其自身上下文中的线程。总线的优点是 gstreamer 应用程序不需要 thread-aware 的，以便使用gStuffER，即使 GStreamer 本身本身也很线程化。
+
+​        Every pipeline contains a bus by default, so applications do not need to create a bus or anything. The only thing applications should do is set a message handler on a bus, which is similar to a signal handler to an object. When the mainloop is running, the bus will periodically be checked for new messages, and the callback will be called when any message is available.
+
+
+## How to use a bus
+
+有两个方式使用 bus:
+
++ 运行一个 GLib/Gtk+ main loop（或定期迭代的默认 GLib main 上下文）并在 bus 上附件一些列的 watch。 这样，GLib main loop 将检查消息总线新的消息并且每当有消息时会通知你。
+
+  ​	这种情况下可以使用 `gst_bus_add_watch()` 或者 `gst_bus_add_signal_watch()`
+  使用总线，附加一个消息处理 handler 到管道使用函数 `gst_bus_add_watch()`。 当管道发送消息到总线时，该 handler 将被调用。在这个 handler里，检查信号类型,和相应的做 handler 执行内容。handler 的返回值：
+  	TRUE : to keep the handler attached to the bus.
+  	FALSE: to remove it.
+
++ Check for messages on the bus yourself. This can be done using `gst_bus_peek()` and/or `gst_bus_poll()`.
+
+可以查看代码 [bus use code -1](../code/offical_bus_way1.c)
+
+
+知道 handler 是在 mainloop 的上下文线程中被调用的是非常重要。这意味着 pipeline 和 application 之间总线交互是异步的，因此不适合一些实时的目的，such as cross-fading between audio tracks, doing (theoretically) gapless playback or video effects. 所有这些事情应该在 pipeline 的上下文进行的，上面的代码是编写的一个最简单的 GStreamer 插件。这是非常有用的为主要目的，但从管道传递消息的应用。这种方法的优点是，所有的线程，GStreamer 是内部隐藏，应用程序开发人员不必担心应用线程的问题。 
+
+注意： 如果使用默认的 GLib mainloop 集成，您可以在总线上连接 "message" signal，而不是附加 watch。这样你就不必 `switch()` 在所有可能的消息类型；只是连接到感兴趣的消息类型上，消息为 message::<type>，<type> 下一节介绍。可以见代码: [offical_bus_way2](../code/offical_bus_way2.c)
+
+
+## Message types
+
+GStreamer 有一些预先定义的消息类型，可以通过总线。然而，messages 是可扩展的。插件可以定义额外的 messages，并且应用程序可以决定是 have specific code 或忽视他们。强烈建议所有的应用程序至少处理错误信息，给用户提供视觉反馈。
+
+所有消息都有 message source, type and timestamp。message source 可以看到元件发出的消息。对于一些信息，例如，应用程序只对 top-level 感兴趣（例如状态更改通知）。下面列表中是所有消息和消息简短的解释其做什么和如何解析消息的具体内容：
+
++ [ ]  Error, warning and information notifications  
+those are used by elements if a message should be shown to the user bout the state of the pipeline.  
+Error &emsp;&emsp;&emsp;&emsp; 消息是致命的，并终止数据传递, error 应该修复并 resume pipeline activity  
+Warnings &emsp;&emsp; 消息不是致命的，但意味存在一个问题  
+Information &emsp; 消息用于非问题通知  
+All those messages contain a `GError` with the main error type and essage, and optionally a debug string.  
+这些消息可以通过使用:  
+
+::: warning
+&emsp;&emsp;gst_message_parse_error()  
+&emsp;&emsp;gst_message__parse_warning()  
+&emsp;&emsp;gst_message_parse_info()  
+:::
+另外 error and debug strings should be `freed` after use。
+
++ [ ] End-of-stream notification  
+&emsp;&emsp;这种情况在流结束时发出。The state of the pipeline will not change，但进一步的媒体处理将停滞。应用程序可以使用它跳过播放列表中的下一首歌曲。流结束后，也有可能在流中寻找回，回放将自动继续。此消息没有特定的参数。
+
++ [ ] Tags  
+&emsp;&emsp; 在流中找到元数据时发出该消息。这可以多次触发用于 pipeline（例如一次用于描述性元数据，例如艺术家名称或歌曲标题，另一个用于流信息，例如 samplerate and bitrate ）。应用程序应该在内部缓存元数据。应该使用 `gst_message_parse_tag()` 来分析标签列表，该标签列表在不再需要时使用 `gst_tag_list_unref ()` 进行释放。  
+
++ [ ] State-changes  
+&emsp;&emsp; 状态成功转变后触发该事件. `gst_message_parse_state_changed()` 可以用于解析新旧抓状态的改变。  
+
++ [ ] Buffering  
+&emsp;&emsp; 在网络流缓存期间发出。通过从 `gst_message_get_structure()` 返回的结构中提取“缓冲区百分比”属性，可以手动从消息中提取进度（百分比）。
+
++ [ ] Element messages  
+&emsp;&emsp; 这些是特定元素特有的特殊消息，通常表示附加的特征。元素的文档应该详细提及特定元素可能发送的元素消息。作为一个例子，如果流包含重定向指令，'qtdemux' QuickTime demuxer element 可以在某些场合发送“重定向”元素消息。 
+
++ [ ] Application-specific messages  
+&emsp;&emsp; 通过获取消息结构（见上文）并读取其字段，可以提取关于这些的任何信息。通常这些信息可以被安全地忽略。  
+&emsp;&emsp; 应用程序消息主要用于在应用程序内部使用，以防应用程序需要将信息从某个线程封送到主线程中。当应用程序使用元素信号时，这是特别有用的（因为这些信号将在流线程的上下文中发射）。
+
+
+
+
