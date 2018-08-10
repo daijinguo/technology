@@ -177,7 +177,7 @@ main (int   argc,
 
 ## Linking elements
 
-通过将一个 source element 与零个或更多的  filter-like elements 和 finally a sink element 链接，可以建立媒体管道。数据将流过元素。这是GStreamer媒体处理的基本概念。
+通过将一个 source element 与零个或更多的  filter-like elements 和 finally a sink element 链接，可以建立媒体管道。数据将流过元素。这是GStreamer媒体处理的基本概念。  
 ![linked-elements](pics/005-linked-elements.png)
 
 通过链接这三个元素，我们创建了一个非常简单的元素链。这样做的效果将是源元素（(“element1”) 的输出将被用作 filter-like element (“element2”) 的输入。
@@ -387,13 +387,14 @@ Error &emsp;&emsp;&emsp;&emsp; 消息是致命的，并终止数据传递, error
 Warnings &emsp;&emsp; 消息不是致命的，但意味存在一个问题  
 Information &emsp; 消息用于非问题通知  
 All those messages contain a `GError` with the main error type and essage, and optionally a debug string.  
-这些消息可以通过使用:  
+这些消息可以通过使用:
 
-::: warning
-&emsp;&emsp;gst_message_parse_error()  
-&emsp;&emsp;gst_message__parse_warning()  
-&emsp;&emsp;gst_message_parse_info()  
-:::
+```
+gst_message_parse_error()
+gst_message__parse_warning()
+gst_message_parse_info()
+```
+
 另外 error and debug strings should be `freed` after use。
 
 + [ ] End-of-stream notification  
