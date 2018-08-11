@@ -570,3 +570,44 @@ A ghostpad is created using the function `gst_ghost_pad_new()`:
 
 [code file](../code/offical_pad_ghost_pad.c)
 
+
+
+# Buffers and Events
+
+&emsp;&emsp; 通过管道流动的数据包括 `buffers and events` 的组合。缓冲区包含实际的媒体数据。事件包含控制信息，例如查找信息和流结束通知器。所有这些都将在管道运行时自动流过管道。这一章主要是为了向你解释这个概念，你不需要为此做任何事情。  
+
+
+## Buffers
+
+&emsp;&emsp; 缓冲区包含将通过您创建的管道流动的数据。源元素通常会创建一个新的缓冲区并将它通过一个 pad 传递到链中的下一个元素。当使用GStreamer基础创建一个媒体管道你不会对付缓冲自己；元素会为你做的。  
+
+缓冲器包括：  
++ 指向内存对象的指针。内存对象封装内存中的一个区域。  
++ A timestamp for the buffer.  
++ A refcount that indicates how many elements are using this buffer. This refcount will be used to destroy the buffer when no element has a reference to it.  
++ Buffer flags.  
+
+&emsp;The simple case is that a buffer is created, memory allocated, data put in it, and passed to the next element. That element reads the data, does something (like creating a new buffer and decoding into it), and unreferences the buffer. This causes the data to be free'ed and the buffer to be destroyed. A typical video or audio decoder works like this.
+
+&emsp;There are more complex scenarios, though. Elements can modify buffers in-place, i.e. without allocating a new one. Elements can also write to hardware memory (such as from video-capture sources) or memory allocated from the X-server (using XShm). Buffers can be read-only, and so on.
+
+
+## Events
+
+&emsp;&emsp;事件是一个控制粒子，它在一个 pipeline 上下游数据一起发送缓冲器。下游事件通知流状态的其他元素。可能的事件包括查找、刷新、流结束通知等。上游事件既用于应用元素交互，也用于元素-元素交互，以请求流状态的改变，如查找。对于应用程序，只有上游事件才是重要的。下游事件仅仅表明以获得更完整的数据概念图。  
+
+```shell
+static void
+seek_to_time (GstElement *element,
+              guint64     time_ns)
+{
+  GstEvent *event;
+
+  event = gst_event_new_seek (1.0, GST_FORMAT_TIME,
+                  GST_SEEK_FLAG_NONE,
+                  GST_SEEK_METHOD_SET, time_ns,
+                  GST_SEEK_TYPE_NONE, G_GUINT64_CONSTANT (0));
+  gst_element_send_event (element, event);
+}
+```
+
