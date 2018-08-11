@@ -417,5 +417,156 @@ gst_message_parse_info()
 &emsp;&emsp; 应用程序消息主要用于在应用程序内部使用，以防应用程序需要将信息从某个线程封送到主线程中。当应用程序使用元素信号时，这是特别有用的（因为这些信号将在流线程的上下文中发射）。
 
 
+# Pads and capabilities
 
+&emsp;&emsp; As we have seen in Elements, the pads are the element's interface to the outside world. Data streams from one element's source pad to another element's sink pad. The specific type of media that the element can handle will be exposed by the pad's capabilities. We will talk more on capabilities later in this chapter (see Capabilities of a pad).
+
+
+## Pads
+
+[offical document about Pads](https://gstreamer.freedesktop.org/documentation/application-development/basics/pads.html)
+
+Pads 有两个属性: 方向性和时效性。  
+
++ 方向性 GStreamer defines two pad directions: source pads and sink pads.  
+ elements receive data on their sink pads and generate data on their source pads. 
+
++ 时效性 三种时效性  
+A pad can have any of three availabilities: `always`, `sometimes` and `on request`.  
+`always pads` always exist  
+`sometimes pad` 只存在于某些情况下（并且可以随机消失）  
+`on-request pads` 只有当应用程序明确请求时，才会出现  
+
+
+## Capabilities of a pad (Pads 的能力)
+
+&emsp;&emsp; Capabilities 已经附加到 pad 模板 并作用到 pad 上。对于 pad 模板可以描述为从该模板创建的 pad 上流的媒体类型。 对于 pads 既可能是 caps 列表（通常是 pad 模板能力的一份拷贝），这种情况下 pad 还没有协商好; 也可能是当前流过 pad 数据流媒体的类型，这种情况下 pad 是协商好的。  
+
+:question: ``这里协商好与没有协商好的意思不是很清晰，后续需要搞清楚``
+
+
+### Dissecting capabilities 解剖能力
+
+&emsp;&emsp;A pad's capabilities are described in a `GstCaps` object. Internally, a `GstCaps` will contain one or more `GstStructure` that will describe one media type. 一个协商好的 pad 将具有完全包含一个结构的能力集合。同时，该结构将只包含固定值。这些约束对于未协商的 pads 或 pad templates 是不正确的。  
+可以使用 `gst-inspect-1.0 vorbisdec` 命令去 dump 一下相关信息例如：
+```shell
+root@com:etc# gst-inspect-1.0 vorbisdec
+Factory Details:
+  Rank                     primary (256)
+  Long-name                Vorbis audio decoder
+  Klass                    Codec/Decoder/Audio
+  Description              decode raw vorbis streams to float audio
+  Author                   Benjamin Otte <otte@gnome.org>, Chris Lord <chris@openedhand.com>
+
+Plugin Details:
+  Name                     vorbis
+  Description              Vorbis plugin library
+  Filename                 /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvorbis.so
+  Version                  1.14.1
+  License                  LGPL
+  Source module            gst-plugins-base
+  Source release date      2018-05-17
+  Binary package           GStreamer Base Plugins (Ubuntu)
+  Origin URL               https://launchpad.net/distros/ubuntu/+source/gst-plugins-base1.0
+
+GObject
+ +----GInitiallyUnowned
+       +----GstObject
+             +----GstElement
+                   +----GstAudioDecoder
+                         +----GstVorbisDec
+
+Pad Templates:
+  SINK template: 'sink'
+    Availability: Always
+    Capabilities:
+      audio/x-vorbis
+  
+  SRC template: 'src'
+    Availability: Always
+    Capabilities:
+      audio/x-raw
+                 format: F32LE
+                   rate: [ 1, 2147483647 ]
+               channels: [ 1, 256 ]
+
+Element has no clocking capabilities.
+Element has no URI handling capabilities.
+
+Pads:
+  SINK: 'sink'
+    Pad Template: 'sink'
+  SRC: 'src'
+    Pad Template: 'src'
+
+Element Properties:
+  name                : The name of the object
+                        flags: readable, writable
+                        String. Default: "vorbisdec0"
+  parent              : The parent of the object
+                        flags: readable, writable
+                        Object of type "GstObject"
+  min-latency         : Aggregate output data to a minimum of latency time (ns)
+                        flags: readable, writable
+                        Integer64. Range: 0 - 9223372036854775807 Default: 0 
+  tolerance           : Perfect ts while timestamp jitter/imperfection within tolerance (ns)
+                        flags: readable, writable
+                        Integer64. Range: 0 - 9223372036854775807 Default: 0 
+  plc                 : Perform packet loss concealment (if supported)
+                        flags: readable, writable
+                        Boolean. Default: false
+root@com:etc# 
+```
+
+### Properties and values
+
+&emsp;&emsp; Properties are used to describe extra information for capabilities. A property consists of a key (a string) and a value. There are different possible value types that can be used:  
+
++ Basic types  
+他可以与 Glib 注册的任何 GType 差不多。这些属性指示此属性的特定非动态值。例子包括： 
+  - An integer value (G_TYPE_INT): the property has this exact value.
+  - A boolean value (G_TYPE_BOOLEAN): the property is either TRUE or FALSE.
+  - A float value (G_TYPE_FLOAT): the property has this exact floating point value.
+  - A string value (G_TYPE_STRING): the property contains a UTF-8 string.
+  - A fraction value (GST_TYPE_FRACTION): contains a fraction expressed by an integer numerator and denominator.
+
++ Range types  
+Range types 是 GStreamer 注册的 `GType`，以指示可能的值的范围。它们用于指示允许的音频采样值或支持的视频大小。GStreamer定义的两种类型是：
+  - An integer range value (GST_TYPE_INT_RANGE): 属性表示一个可能的整数的范围，具有一个下界和一个上边界。例如，"vorbisdec" 元素的速率属性可以在8000到50000之间。
+  - A float range value (GST_TYPE_FLOAT_RANGE): 该属性表示可能的浮点值的范围，具有下界和上边界。
+  - A fraction range value (GST_TYPE_FRACTION_RANGE): 该属性表示一个可能的分数值的范围，具有下界和上边界。
+
++ A list value (GST_TYPE_LIST)  
+属性可以从列表中给出的基本值列表中获取任何值。
+
++ An array value (GST_TYPE_ARRAY):  
+属性是一个值数组。数组中的每个值本身也是一个完全值。数组中的所有值都应该是相同的基本类型。这意味着一个数组可以包含整数、整数列表、整数范围的任何组合，并且对于浮点数或字符串都是相同的，但是它不能同时包含浮点和int。  
+
+
+### What capabilities are used for
+
+&emsp;&emsp; Capabilities (short: caps) describe the type of data that is streamed between two pads, or that one pad (template) supports. This makes them very useful for various purposes:
+
++ Autoplugging: 根据其能力自动查找链接到 pad 的元素。所有的自动插入器都使用这种方法。  
++ Compatibility detection(相容性检测) : 当两个 pads 连接时，GStreamer 可以验证两个 pads 是否在谈论相同的 media type。连接两个焊盘并检查它们是否兼容的过程称为“能力协商”。  
++ Metadata(元数据): 从 pad 获得的能力，应用程序可以提供关于媒体被放在垫的类型信息，这是关于流正在播放信息。   
++ Filtering: 应用程序可以使用能力来限制可能在两 pads 之间流到它们支持的流类型的特定子集的可能的媒体类型。例如，应用程序可以使用 "filtered caps" 来设置特定的（固定的或非固定的）视频大小，这些视频大小应该在两个焊盘之间流动。您将在本手册后面看到一个过滤过的CAP的例子，在手动添加或删除数据到管道中。您可以通过将 `caps filtering` 元素插入到管道中并设置其“caps”属性来进行caps过滤。CAPS滤波器通常放置在转换器元件如音频转换、音频存储、视频转换或视频缩放之后，迫使这些转换器在流的某一点将数据转换为特定的输出格式。  
+
+
+#### Using capabilities for metadata
+you can watch the source document offical
+
+
+## Ghost pads
+
+如下的示意图是一个非  ghost pads:  
+![bin element noghost](pics/007-bin-element-noghost.png)  
+
+`Ghost pads` 是从 bin 中的一些 element 可以直接从 bin 中存取的 pad。与UNIX文件系统中的符号链接相似。在 bin 上使用 `ghost pads`，容器也有一个 pad，并且可以透明地用作代码的其他部分中的元素。  
+![](pics/008-bin-element-ghost.png)  
+
+The sink pad of \{element 1\} is now also a pad of the bin. Because ghost pads look and work like any other pads, they can be added to any type of elements, not just to a GstBin, just like ordinary pads.  
+A ghostpad is created using the function `gst_ghost_pad_new()`:  
+
+[code file](../code/offical_pad_ghost_pad.c)
 
