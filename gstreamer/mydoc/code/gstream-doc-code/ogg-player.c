@@ -67,12 +67,33 @@ on_pad_added(GstElement *element,
     gst_object_unref(GST_OBJECT(sinkpad));
 }
 
+static void
+seek_to_time(GstElement *pipeline, gint64 time_nanoseconds)
+{
+    if( gst_element_seek(pipeline,
+                         1.0,
+                         GST_FORMAT_TIME,
+                         GST_SEEK_FLAG_FLUSH,
+                         GST_SEEK_TYPE_SET,
+                         time_nanoseconds,
+                         GST_SEEK_TYPE_NONE,
+                         GST_CLOCK_TIME_NONE) )
+    {
+        g_print("seek successfully\n");
+    }
+    else
+    {
+        g_printerr("seek failed\n");
+    }
+}
 
 static gboolean
 cb_print_position(GstElement *pipeline)
 {
-    gint64   pos, len;
-    gboolean result;
+    static gint index = 1;
+    gint64      pos, len;
+    gboolean    result;
+
 
     result = gst_element_query_position(pipeline, GST_FORMAT_TIME, &pos);
     if( TRUE == result )
@@ -84,11 +105,20 @@ cb_print_position(GstElement *pipeline)
                     GST_TIME_ARGS (pos),
                     GST_TIME_ARGS (len)
                    );
+
+            if(index > 0)
+            {
+                // now we will seek to 30 seconds
+                seek_to_time(pipeline, 30000000000);
+                index--;
+            }
         }
     }
 
     return TRUE;
 }
+
+
 
 int main( int argc, char *argv[])
 {
@@ -170,6 +200,7 @@ int main( int argc, char *argv[])
 
     // add time show call back
     g_timeout_add(200, (GSourceFunc)cb_print_position, pipeline);
+
 
     /* Iterate */
     g_print ("Running...\n");
