@@ -1,10 +1,11 @@
 //
 // how to build this
 // libtool --mode=link gcc -Wall ogg-player.c -o ogg-player $(pkg-config --cflags --libs gstreamer-1.0)
-//
+// gcc -Wall ogg-player.c -o ogg-player $(pkg-config --cflags --libs gstreamer-1.0) $(pkg-config --cflags --libs gobject-2.0)
 
 #include <gst/gst.h>
 #include <glib.h>
+//#include <gmain.h>
 
 static gboolean bus_call(GstBus     *bus,
                          GstMessage *message,
@@ -57,6 +58,29 @@ on_pad_added(GstElement *element,
     gst_pad_link(pad, sinkpad);
 
     gst_object_unref(GST_OBJECT(sinkpad));
+}
+
+
+static gboolean
+cb_print_position(GstElement *pipeline)
+{
+    gint64   pos, len;
+    gboolean result;
+
+    result = gst_element_query_position(pipeline, GST_FORMAT_TIME, &pos);
+    if( TRUE == result )
+    {
+        result = gst_element_query_duration(pipeline, GST_FORMAT_TIME, &len);
+        if(TRUE == result)
+        {
+            g_print("Time: %" GST_TIME_FORMAT " / %" GST_TIME_FORMAT "\r",
+                    GST_TIME_ARGS (pos),
+                    GST_TIME_ARGS (len)
+                   );
+        }
+    }
+
+    return TRUE;
 }
 
 int main( int argc, char *argv[])
@@ -136,6 +160,9 @@ int main( int argc, char *argv[])
     g_print("Now playing: %s\n", argv[1]);
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
+
+    // add time show call back
+    g_timeout_add(200, (GSourceFunc)cb_print_position, pipeline);
 
     /* Iterate */
     g_print ("Running...\n");
