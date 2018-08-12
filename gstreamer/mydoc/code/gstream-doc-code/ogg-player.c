@@ -35,6 +35,13 @@ static gboolean bus_call(GstBus     *bus,
                 g_main_loop_quit(loop);
                 break;
             }
+        case GST_MESSAGE_ASYNC_DONE:
+            {
+                GstClockTime clocktime;
+                gst_message_parse_async_done(message, &clocktime);
+                g_print("async done: clock time = %ld\n", clocktime);
+                break;
+            }
 
         default:
             break;
