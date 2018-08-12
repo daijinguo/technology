@@ -138,6 +138,10 @@ int main( int argc, char *argv[])
         return -1;
     }
 
+    //
+    // we use the gst_element_factory_make function to create an element
+    // the first paramer is innter string, the name is defined
+    //
     pipeline = gst_pipeline_new("audio-player");
     source   = gst_element_factory_make("filesrc",       "file-source");
     demuxer  = gst_element_factory_make("oggdemux",      "ogg-demuxer");
@@ -147,37 +151,37 @@ int main( int argc, char *argv[])
 
     if(!pipeline)
     {
-        g_printerr("pipeline is null");
+        g_printerr("pipeline is null\n");
         goto exit_with_error;
     }
 
     if(!source)
     {
-        g_printerr("source is null");
+        g_printerr("source is null\n");
         goto exit_with_error;
     }
 
     if(!demuxer)
     {
-        g_printerr("demuxer is null");
+        g_printerr("demuxer is null\n");
         goto exit_with_error;
     }
 
     if(!decoder)
     {
-        g_printerr("decoder is null");
+        g_printerr("decoder is null\n");
         goto exit_with_error;
     }
 
     if(!conv)
     {
-        g_printerr("conv is null");
+        g_printerr("conv is null\n");
         goto exit_with_error;
     }
 
     if(!sink)
     {
-        g_printerr("sink is null");
+        g_printerr("sink is null\n");
         goto exit_with_error;
     }
 
