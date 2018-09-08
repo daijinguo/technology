@@ -157,6 +157,13 @@ if [ ! -d "02.kotlin-life" ]; then
    git clone https://github.com/Cuieney/kotlin-life.git 02.kotlin-life
 fi
 
+# IV.3  ARouter
+if [ ! -d "ARouter" ]; then
+   echo "download the kotlin-life ..."
+   git clone https://github.com/alibaba/ARouter.git
+fi
+
+
 
 # part IV} +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
