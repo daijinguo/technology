@@ -89,6 +89,13 @@ if [ ! -d "07.VirtualAPK" ]; then
    git clone https://github.com/didi/VirtualAPK.git 07.VirtualAPK
 fi
 
+# II.8  XModulable
+echo "https://github.com/xpleemoon/XModulable.git"
+if [ ! -d "08.XModulable" ]; then
+   #echo "download the fat-aar-plugin ..."
+   git clone https://github.com/xpleemoon/XModulable.git 08.XModulable
+fi
+
 
 # part II} +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
