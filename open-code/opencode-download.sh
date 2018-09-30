@@ -170,6 +170,12 @@ if [ ! -d "ARouter" ]; then
    git clone https://github.com/alibaba/ARouter.git
 fi
 
+# IV 4 a looger
+if [ ! -d "logger" ]; then
+   echo "download the kotlin-life ..."
+   git clone https://github.com/orhanobut/logger.git
+fi
+
 
 
 # part IV} +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
