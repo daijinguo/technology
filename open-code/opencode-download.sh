@@ -169,7 +169,7 @@ if [ ! -d "ARouter" ]; then
    git clone https://github.com/alibaba/ARouter.git
 fi
 
-if [ ! -d "03.RxJava2Examples"]; then
+if [ ! -d "03.RxJava2Examples" ]; then
     git clone https://github.com/nanchen2251/RxJava2Examples.git 03.RxJava2Examples
 fi
 
