@@ -166,16 +166,18 @@ fi
 
 # IV.3  ARouter
 if [ ! -d "ARouter" ]; then
-   echo "download the kotlin-life ..."
    git clone https://github.com/alibaba/ARouter.git
 fi
 
-# IV 4 a looger
-if [ ! -d "logger" ]; then
-   echo "download the kotlin-life ..."
-   git clone https://github.com/orhanobut/logger.git
+if [ ! -d "03.RxJava2Examples"]; then
+    git clone https://github.com/nanchen2251/RxJava2Examples.git 03.RxJava2Examples
 fi
 
+# IV 4 a looger
+if [ ! -d "04.logger" ]; then
+   echo "download the kotlin-life ..."
+   git clone https://github.com/orhanobut/logger.git 04.logger
+fi
 
 
 # part IV} +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
