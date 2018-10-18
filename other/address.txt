@@ -1,2 +1,7 @@
 how to use the wifi pwd
 https://www.cnblogs.com/shengulong/p/6367343.html
+
+
+android rtmp input streamer
+https://blog.csdn.net/fzl562410663/article/details/73018315?utm_source=blogxgwz2
+https://github.com/ant-media/LibRtmp-Client-for-Android
