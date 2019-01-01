@@ -42,3 +42,39 @@ emacs 相关快捷键
 | C-u n  | 重复执行 n 次后续命令(省略 n 时重复4次) |
 
 说明: none 表示先 ESC x 在执行后续的命令的全名, 比如 `goto-line`
+
+
+# 文本删除命令
+
+| 快捷键              | 命令名称                | 说明                 |
+| ------------------- | ----------------------- | -------------------- |
+| C-d                 | delete-char             | 删除光标位置上的字符 |
+| DEL                 | delete-backward-char    | 删除光标前面的字符   |
+| ESC d               | kill-word               | 删除光标后面的单词   |
+| ESC DEL             | backwird-kill-word      | 删除光标前面的单词   |
+| C-k                 | kill-line               | 从光标位置删除到尾部 |
+| ESC k               | kill-sentence           | 删除光标后面的句子   |
+| C-x DEL             | backwork-kill-sentence  | 删除光标前面的句子   |
+| C-y 或 SHIFT-INSET  | yank                    | 恢复被删除的文本     |
+| C-w 或 SHIFT-DELETE | kill-region             | 删除文本块           |
+| none                | kill-paragraph          | 删除光标后面的段落   |
+| none                | backward-kill-paragraph | 删除光标前面的段落   |
+
+
+# 文本块操作命令
+
+| 快捷键              | 命令名称                | 说明                                 |
+| ------------------- | ----------------------- | ------------------------------------ |
+| C-@ 或者 C-SPACE    | set-mark-command        | 标记文本块的开始(或者结束)位置       |
+| C-x C-x             | exchange-point-and-mark | 互换插入点和文本标记位置             |
+| C-x DEL             | backwork-kill-sentence  | 删除光标前面的句子                   |
+| C-y 或 SHIFT-INSET  | yank                    | 恢复被删除的文本                     |
+| C-w 或 SHIFT-DELETE | kill-region             | 删除文本块                           |
+| ESC w 或 C-INSERT   | kill-ring-save          | 复制文本块 (便于使用'C-y'命令来粘贴) |
+
+
+| C-y 或 SHIFT-INSET  | yank                    | 恢复被删除的文本                     |
+| C-w 或 SHIFT-DELETE | kill-region             | 删除文本块                           |
+| ESC w 或 C-INSERT   | kill-ring-save          | 复制文本块 (便于使用'C-y'命令来粘贴) |
+
+
