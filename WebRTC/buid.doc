@@ -1,0 +1,18 @@
+编译 webrtc， 官方文档:
+https://webrtc.org/native-code/development/
+
+1. 现价依赖的文件从 https://cs.chromium.org/chromium/src/build/install-build-deps.sh 下载下来
+
+编译需要做的步骤:
+1. Depot Tools
+1.1  Install the Chromium depot tools.
+https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up
+
+LINUX / MAC
+Clone the depot_tools repository:
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+
+Add depot_tools to the end of your PATH (you will probably want to put this in your ~/.bashrc or ~/.zshrc). Assuming you cloned depot_tools to /path/to/depot_tools:
+
+$ export PATH=$PATH:/path/to/depot_tools
+
